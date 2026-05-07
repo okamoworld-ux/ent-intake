@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>めまい問診</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f1ea;
+    --bg-card: #ffffff;
+    --ink: #1a1f2e;
+    --ink-soft: #4a5168;
+    --ink-mute: #8590a8;
+    --accent: #1f5f6b;
+    --accent-soft: #e6efef;
+    --accent-deep: #143f48;
+    --line: #d8d2c4;
+    --warn: #b04030;
+    --shadow: 0 2px 8px rgba(20,30,40,0.06);
+    --shadow-lg: 0 8px 24px rgba(20,30,40,0.12);
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'BIZ UDPGothic', 'Hiragino Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  /* Header */
+  .header {
+    height: 64px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+  }
+
+  .back-btn {
+    background: none;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-width: 90px;
+  }
+
+  .back-btn:active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .back-btn[disabled] {
+    opacity: 0.25;
+    pointer-events: none;
+  }
+
+  .restart-btn {
+    background: none;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink-mute);
+    cursor: pointer;
+  }
+
+  .restart-btn:active {
+    background: #fdf0ed;
+    border-color: var(--warn);
+    color: var(--warn);
+  }
+
+  /* Main */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 32px 40px 40px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .question-wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .qnum {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  .question {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.5;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .question .em {
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 2px;
+  }
+
+  .subtext {
+    font-size: 16px;
+    color: var(--ink-mute);
+    margin-bottom: 28px;
+    font-weight: 400;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 8px;
+  }
+
+  .option {
+    background: var(--bg-card);
+    border: 2px solid var(--line);
+    border-radius: 16px;
+    padding: 22px 26px;
+    font-family: inherit;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: var(--shadow);
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 70px;
+  }
+
+  .option:active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    transform: scale(0.99);
+  }
+
+  .option.selected {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-deep);
+  }
+
+  .checkmark {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: white;
+    background: white;
+  }
+
+  .option.selected .checkmark {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .option.selected .checkmark::after {
+    content: '✓';
+    font-weight: 900;
+  }
+
+  .multi-hint {
+    font-size: 16px;
+    color: var(--ink-mute);
+    margin-top: 8px;
+    margin-bottom: 4px;
+  }
+
+  /* Footer for multi-select next button */
+  .footer {
+    flex-shrink: 0;
+    padding: 16px 40px 24px;
+    background: var(--bg);
+    display: flex;
+    justify-content: center;
+  }
+
+  .next-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    padding: 20px 60px;
+    font-family: inherit;
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-lg);
+    transition: all 0.15s ease;
+    min-width: 280px;
+  }
+
+  .next-btn:active {
+    background: var(--accent-deep);
+    transform: scale(0.98);
+  }
+
+  .next-btn[disabled] {
+    background: var(--ink-mute);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  /* Start screen */
+  .start-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+  }
+
+  .start-title {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 56px;
+    font-weight: 900;
+    color: var(--accent-deep);
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+
+  .start-tagline {
+    font-size: 18px;
+    color: var(--ink-mute);
+    margin-bottom: 56px;
+    letter-spacing: 0.1em;
+  }
+
+  .start-label {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--ink-mute);
+    margin-bottom: 16px;
+  }
+
+  .start-number {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 180px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+    text-shadow: 0 4px 20px rgba(31,95,107,0.15);
+  }
+
+  .start-instruction {
+    font-size: 22px;
+    line-height: 1.7;
+    color: var(--ink-soft);
+    max-width: 600px;
+    margin-bottom: 12px;
+  }
+
+  .start-emphasis {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.7;
+    color: var(--ink);
+    max-width: 600px;
+    margin-bottom: 24px;
+    background: var(--accent-soft);
+    padding: 24px 32px;
+    border-radius: 12px;
+    border-left: 4px solid var(--accent);
+    text-align: left;
+  }
+
+  .start-note {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--ink-mute);
+    margin-bottom: 48px;
+  }
+
+  .start-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 26px 80px;
+    font-family: inherit;
+    font-size: 26px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-lg);
+    letter-spacing: 0.05em;
+  }
+
+  .start-btn:active {
+    background: var(--accent-deep);
+    transform: scale(0.98);
+  }
+
+  /* End screen */
+  .end-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+  }
+
+  .end-thanks {
+    font-size: 24px;
+    color: var(--ink-soft);
+    margin-bottom: 32px;
+  }
+
+  .end-label {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--ink-mute);
+    margin-bottom: 12px;
+  }
+
+  .end-number {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 180px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    margin-bottom: 32px;
+  }
+
+  .end-message {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.6;
+    color: var(--ink);
+    max-width: 600px;
+    background: var(--accent-soft);
+    padding: 24px 32px;
+    border-radius: 16px;
+    border-left: 6px solid var(--accent);
+  }
+
+  .doctor-view-link {
+    margin-top: 48px;
+    background: none;
+    border: 1px dashed var(--ink-mute);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--ink-mute);
+    cursor: pointer;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20,30,40,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+
+  .modal-title {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 32px;
+    line-height: 1.4;
+  }
+
+  .modal-buttons {
+    display: flex;
+    gap: 16px;
+    flex-direction: column;
+  }
+
+  .modal-no {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 22px;
+    font-family: inherit;
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+    order: 1;
+  }
+
+  .modal-yes {
+    background: white;
+    color: var(--warn);
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    order: 2;
+    margin-top: 32px;
+  }
+
+  /* Doctor view */
+  .doctor-screen {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 24px;
+    background: #0f1419;
+    color: #e6e8eb;
+  }
+
+  .doctor-card {
+    max-width: 480px;
+    margin: 0 auto;
+    background: #1a2030;
+    border-radius: 16px;
+    padding: 28px;
+    border: 1px solid #2a3142;
+  }
+
+  .doctor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #2a3142;
+  }
+
+  .doctor-num {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 48px;
+    font-weight: 900;
+    color: #5fb8c8;
+    line-height: 1;
+  }
+
+  .doctor-time {
+    font-size: 13px;
+    color: #6b7488;
+  }
+
+  .doctor-section {
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+
+  .doctor-key {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #6b7488;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .doctor-val {
+    font-size: 18px;
+    font-weight: 500;
+    color: #e6e8eb;
+  }
+
+  .doctor-val.alert {
+    color: #ff8a7a;
+    font-weight: 700;
+  }
+
+  .doctor-empty {
+    color: #6b7488;
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .doctor-back {
+    display: block;
+    margin: 24px auto 0;
+    background: none;
+    border: 1px solid #2a3142;
+    color: #6b7488;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* Animations */
+  .fade-in {
+    animation: fadeIn 0.25s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="header" id="header" style="display:none">
+  <button class="back-btn" id="backBtn" onclick="goBack()">← 戻る</button>
+  <button class="restart-btn" onclick="confirmRestart()">最初から</button>
+</div>
+
+<div class="main" id="main"></div>
+
+<div class="footer" id="footer" style="display:none">
+  <button class="next-btn" id="nextBtn" onclick="confirmMulti()">次へ進む</button>
+</div>
+
+<script>
+// ============================================================
+// 問診フロー定義
+// ============================================================
+const FLOW = {
+  '1.1': {
+    section: '発症時期',
+    question: 'いつ始まりましたか?',
+    type: 'single',
+    options: [
+      { label: '昨日・今日' },
+      { label: '1週間以内' },
+      { label: '1ヶ月以内' },
+      { label: '3ヶ月以内' },
+      { label: 'それ以上前' }
+    ],
+    next: '1.2'
+  },
+  '1.2': {
+    section: '性状',
+    question: 'めまいはどんな感じですか?',
+    type: 'single',
+    options: [
+      { label: 'グルグル回る感じ', value: '回転性', next: '2.1' },
+      { label: 'フワフワ・ふらつく感じ', value: '浮動性', next: '3.1' }
+    ]
+  },
+
+  // 回転性ルート
+  '2.1': {
+    section: '持続時間',
+    question: '1回のめまいはどのくらい続きますか?',
+    type: 'single',
+    options: [
+      { label: '数秒〜1分' },
+      { label: '数分〜10分' },
+      { label: '数十分〜数時間' },
+      { label: '半日以上・持続中' }
+    ],
+    next: '2.2'
+  },
+  '2.2': {
+    section: '発作回数',
+    question: 'これまでに何回ありましたか?',
+    type: 'single',
+    options: [
+      { label: '1回だけ(初めて)', value: '1回だけ', next: '2.4' },
+      { label: '何回か繰り返している', value: '繰り返し', next: '2.3' },
+      { label: 'ずっと続いている', value: '持続中', next: '2.4' }
+    ]
+  },
+  '2.3': {
+    section: '発作頻度',
+    question: '発作の頻度は?',
+    type: 'single',
+    options: [
+      { label: '毎日' },
+      { label: '週に数度' },
+      { label: '毎週' },
+      { label: '毎月' }
+    ],
+    next: '2.4'
+  },
+  '2.4': {
+    section: '回転方向',
+    question: 'どんな回り方ですか?',
+    type: 'single',
+    options: [
+      { label: '景色が右から左に流れる' },
+      { label: '景色が左から右に流れる' },
+      { label: '時計回りに回る' },
+      { label: '反時計回りに回る' },
+      { label: 'わからない' }
+    ],
+    next: '2.5'
+  },
+  '2.5': {
+    section: '発症時間帯',
+    question: 'めまいが起きた時間帯は?',
+    type: 'single',
+    options: [
+      { label: '寝起き周り(朝・就寝前)', value: '寝起き周り', next: '2.5.1' },
+      { label: 'それ以外', value: 'それ以外', next: '2.6' }
+    ]
+  },
+  '2.5.1': {
+    section: '寝起き発症の動作',
+    question: '寝起き周りのどの瞬間に起きましたか?',
+    type: 'single',
+    options: [
+      { label: '目が覚めた時点ですでに回っていた' },
+      { label: '寝返り・起き上がりで起きた' },
+      { label: '立ち上がりで起きた' }
+    ],
+    next: '2.6'
+  },
+  '2.6': {
+    section: '前日の就寝体位',
+    question: '発症の前日、どちらを下にして寝ていましたか?',
+    type: 'single',
+    options: [
+      { label: '右下' },
+      { label: '左下' },
+      { label: 'それ以外' }
+    ],
+    next: '4.1'
+  },
+
+  // 浮動性ルート
+  '3.1': {
+    section: '持続時間',
+    question: '1回のふらつきはどのくらい続きますか?',
+    type: 'single',
+    options: [
+      { label: '数秒〜1分' },
+      { label: '数分〜10分' },
+      { label: '数十分〜数時間' },
+      { label: '半日以上・持続中' }
+    ],
+    next: '3.2'
+  },
+  '3.2': {
+    section: '発作回数',
+    question: 'これまでに何回ありましたか?',
+    type: 'single',
+    options: [
+      { label: '1回だけ(初めて)', value: '1回だけ', next: '3.4' },
+      { label: '何回か繰り返している', value: '繰り返し', next: '3.3' },
+      { label: 'ずっと続いている', value: '持続中', next: '3.4' }
+    ]
+  },
+  '3.3': {
+    section: '発作頻度',
+    question: '発作の頻度は?',
+    type: 'single',
+    options: [
+      { label: '毎日' },
+      { label: '週に数度' },
+      { label: '毎週' },
+      { label: '毎月' }
+    ],
+    next: '3.4'
+  },
+  '3.4': {
+    section: '増悪因子',
+    question: 'どんな時にひどくなりますか?',
+    type: 'single',
+    options: [
+      { label: '立っているとひどくなる' },
+      { label: '頭を動かすとひどくなる' },
+      { label: '疲れた時にひどくなる' },
+      { label: 'わからない' }
+    ],
+    next: '3.5'
+  },
+  '3.5': {
+    section: '発症時間帯',
+    question: 'ふらつきが起きた時間帯は?',
+    type: 'single',
+    options: [
+      { label: '寝起き周り(朝・就寝前)', value: '寝起き周り', next: '3.5.1' },
+      { label: 'それ以外', value: 'それ以外', next: '4.1' }
+    ]
+  },
+  '3.5.1': {
+    section: '寝起き発症の動作',
+    question: '寝起き周りのどの瞬間にふらつきましたか?',
+    type: 'single',
+    options: [
+      { label: '目が覚めた時点ですでにふわふわしていた' },
+      { label: '寝返り・起き上がりでふらついた' },
+      { label: '立ち上がりでふらついた' }
+    ],
+    next: '4.1'
+  },
+
+  // 共通: 内耳症状
+  '4.1': {
+    section: '内耳症状',
+    question: '今回のめまいの<span class="em">前後で新しく出た</span>症状は?',
+    subtext: '当てはまるものをすべて選んでください',
+    type: 'multi',
+    options: [
+      { label: '右の聞こえが悪くなった' },
+      { label: '左の聞こえが悪くなった' },
+      { label: '右の耳鳴が出た' },
+      { label: '左の耳鳴が出た' },
+      { label: 'なし', exclusive: true }
+    ],
+    next: '5.1'
+  },
+
+  // 共通: 神経症状
+  '5.1': {
+    section: '神経症状',
+    question: '今回のめまいの<span class="em">前後で新しく出た</span>症状は?',
+    subtext: '当てはまるものをすべて選んでください',
+    type: 'multi',
+    options: [
+      { label: '片側の手足が動かしにくい・しびれる' },
+      { label: '言葉が出にくい・ろれつが回らない' },
+      { label: '物が二重に見える' },
+      { label: '顔の片側が動きにくい' },
+      { label: 'なし', exclusive: true }
+    ],
+    next: '6.1'
+  },
+
+  // 共通: 外傷
+  '6.1': {
+    section: '外傷機転',
+    question: 'この1ヶ月以内に、頭を打ったり、首をひねったりしたことがありますか?',
+    type: 'single',
+    options: [
+      { label: 'はい' },
+      { label: 'いいえ' }
+    ],
+    next: '7.1'
+  },
+
+  // 共通: 既往歴
+  '7.1': {
+    section: '既往歴',
+    question: '以下の既往はありますか?',
+    subtext: '当てはまるものをすべて選んでください',
+    type: 'multi',
+    options: [
+      { label: '突発性難聴の治療歴' },
+      { label: 'メニエール病の治療歴' },
+      { label: '片頭痛', triggers: '7.2' },
+      { label: '脳梗塞・脳出血・その他の脳疾患', triggers: '7.3' },
+      { label: '神経系の疾患', triggers: '7.3' },
+      { label: '腎機能障害' },
+      { label: '心房細動' },
+      { label: '当てはまるものなし', exclusive: true }
+    ],
+    nextLogic: 'eikowareki'
+  },
+  '7.2': {
+    section: '前庭性片頭痛スクリーニング',
+    question: 'めまい発作のうち、半分以上が<span class="em">頭痛の後</span>に起きますか?',
+    type: 'single',
+    options: [
+      { label: 'はい' },
+      { label: 'いいえ' }
+    ],
+    nextLogic: 'after72'
+  },
+  '7.3': {
+    section: '後遺症',
+    question: 'その後遺症で、現在も以下の症状が残っていますか?',
+    subtext: '当てはまるものをすべて選んでください',
+    type: 'multi',
+    options: [
+      { label: '顔の片側が動きにくい・感覚が鈍い' },
+      { label: '聞こえが悪い・耳鳴がある・ふらつく' },
+      { label: '飲み込みにくい・声が出にくい・ろれつが回りにくい' },
+      { label: '手足の動きが悪い・感覚が鈍い' },
+      { label: '上記以外、または後遺症はない', exclusive: true }
+    ],
+    next: 'END'
+  }
+};
+
+// ============================================================
+// State
+// ============================================================
+let currentNumber = '01';
+let currentQuestionId = null;
+let history = [];
+let answers = {};
+let multiSelectBuffer = [];
+
+// ============================================================
+// Initialize
+// ============================================================
+function generateNumber() {
+  // For demo: random 01-99. In production: sequential per day.
+  const stored = sessionStorage.getItem('demoNum');
+  let n;
+  if (stored) {
+    n = (parseInt(stored) % 99) + 1;
+  } else {
+    n = Math.floor(Math.random() * 12) + 1;
+  }
+  sessionStorage.setItem('demoNum', n.toString());
+  currentNumber = String(n).padStart(2, '0');
+}
+
+function start() {
+  currentNumber = null;
+  currentQuestionId = null;
+  history = [];
+  answers = {};
+  multiSelectBuffer = [];
+  renderStart();
+}
+
+// ============================================================
+// Renderers
+// ============================================================
+function renderStart() {
+  document.getElementById('header').style.display = 'none';
+  document.getElementById('footer').style.display = 'none';
+  document.getElementById('main').innerHTML = `
+    <div class="start-screen fade-in">
+      <div class="start-title">めまいの問診</div>
+      <div class="start-tagline">タップでお答えください</div>
+      <div class="start-emphasis">複数回めまいがあった方は、<br><strong>一番つらかった1回</strong>について<br>お答えください</div>
+      <div class="start-note">最後まで回答すると<br>診察用の番号が表示されます</div>
+      <button class="start-btn" onclick="goToQuestion('1.1')">問診を始める</button>
+    </div>
+  `;
+}
+
+function renderQuestion(qid) {
+  const q = FLOW[qid];
+  if (!q) return;
+
+  document.getElementById('header').style.display = 'flex';
+  document.getElementById('backBtn').disabled = history.length === 0;
+
+  const isMulti = q.type === 'multi';
+
+  let optionsHtml = q.options.map((opt, idx) => {
+    const isSelected = isMulti && multiSelectBuffer.includes(opt.label);
+    const checkmarkHtml = isMulti ? '<div class="checkmark"></div>' : '';
+    return `
+      <button class="option ${isSelected ? 'selected' : ''}" 
+        onclick="${isMulti ? `toggleMulti('${qid}', ${idx})` : `selectSingle('${qid}', ${idx})`}">
+        ${checkmarkHtml}
+        <span>${opt.label}</span>
+      </button>
+    `;
+  }).join('');
+
+  document.getElementById('main').innerHTML = `
+    <div class="question-wrap fade-in">
+      <div class="qnum">${q.section}</div>
+      <div class="question">${q.question}</div>
+      ${q.subtext ? `<div class="subtext">${q.subtext}</div>` : ''}
+      <div class="options">${optionsHtml}</div>
+    </div>
+  `;
+
+  if (isMulti) {
+    document.getElementById('footer').style.display = 'flex';
+    updateNextBtn();
+  } else {
+    document.getElementById('footer').style.display = 'none';
+  }
+}
+
+function selectSingle(qid, idx) {
+  const q = FLOW[qid];
+  const opt = q.options[idx];
+  answers[qid] = opt.value || opt.label;
+
+  // Determine next
+  let next;
+  if (opt.next) next = opt.next;
+  else if (q.next) next = q.next;
+  else if (q.nextLogic === 'after72') next = computeAfter72();
+
+  history.push(qid);
+  
+  if (next === 'END') {
+    renderEnd();
+  } else {
+    goToQuestion(next);
+  }
+}
+
+function toggleMulti(qid, idx) {
+  const q = FLOW[qid];
+  const opt = q.options[idx];
+
+  if (opt.exclusive) {
+    // Exclusive option (e.g., "なし"): clear others, toggle this
+    if (multiSelectBuffer.includes(opt.label)) {
+      multiSelectBuffer = [];
+    } else {
+      multiSelectBuffer = [opt.label];
+    }
+  } else {
+    // Regular option: remove any exclusive options first
+    multiSelectBuffer = multiSelectBuffer.filter(x => {
+      const o = q.options.find(o => o.label === x);
+      return !o || !o.exclusive;
+    });
+    if (multiSelectBuffer.includes(opt.label)) {
+      multiSelectBuffer = multiSelectBuffer.filter(x => x !== opt.label);
+    } else {
+      multiSelectBuffer.push(opt.label);
+    }
+  }
+
+  renderQuestion(qid);
+}
+
+function updateNextBtn() {
+  const btn = document.getElementById('nextBtn');
+  btn.disabled = multiSelectBuffer.length === 0;
+}
+
+function confirmMulti() {
+  const qid = currentQuestionId;
+  if (multiSelectBuffer.length === 0) return;
+  
+  answers[qid] = [...multiSelectBuffer];
+  history.push(qid);
+
+  const q = FLOW[qid];
+  let next;
+
+  if (q.nextLogic === 'eikowareki') {
+    next = computeEikowarekiNext();
+  } else {
+    next = q.next;
+  }
+
+  if (next === 'END') {
+    renderEnd();
+  } else {
+    goToQuestion(next);
+  }
+}
+
+function computeEikowarekiNext() {
+  const selected = answers['7.1'] || [];
+  const has = (label) => selected.some(s => s === label);
+  
+  // First check if there's an outstanding 7.2 or 7.3 trigger
+  if (has('片頭痛') && !answers['7.2']) return '7.2';
+  if ((has('脳梗塞・脳出血・その他の脳疾患') || has('神経系の疾患')) && !answers['7.3']) return '7.3';
+  return 'END';
+}
+
+function computeAfter72() {
+  // After 7.2, check if 7.3 needed
+  const selected = answers['7.1'] || [];
+  if (selected.includes('脳梗塞・脳出血・その他の脳疾患') || selected.includes('神経系の疾患')) {
+    if (!answers['7.3']) return '7.3';
+  }
+  return 'END';
+}
+
+function goToQuestion(qid) {
+  currentQuestionId = qid;
+  const q = FLOW[qid];
+  if (q && q.type === 'multi') {
+    multiSelectBuffer = answers[qid] ? [...answers[qid]] : [];
+  }
+  renderQuestion(qid);
+}
+
+function goBack() {
+  if (history.length === 0) return;
+  const prev = history.pop();
+  // Clear answer for the question we're returning to
+  delete answers[prev];
+  // Also clear any answers that were dependent on it (downstream)
+  if (prev === '7.1') { delete answers['7.2']; delete answers['7.3']; }
+  if (prev === '7.2') { delete answers['7.3']; }
+  goToQuestion(prev);
+}
+
+function confirmRestart() {
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal-overlay" id="modal" onclick="if(event.target.id==='modal')closeModal()">
+      <div class="modal">
+        <div class="modal-title">本当に最初に戻りますか?<br>すべての回答が消えます</div>
+        <div class="modal-buttons">
+          <button class="modal-no" onclick="closeModal()">いいえ、続ける</button>
+          <button class="modal-yes" onclick="closeModal();start()">はい、最初から</button>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+function closeModal() {
+  const m = document.getElementById('modal');
+  if (m) m.remove();
+}
+
+function renderEnd() {
+  if (!currentNumber) generateNumber();
+  document.getElementById('header').style.display = 'none';
+  document.getElementById('footer').style.display = 'none';
+  document.getElementById('main').innerHTML = `
+    <div class="end-screen fade-in">
+      <div class="end-thanks">ご回答ありがとうございました</div>
+      <div class="end-label">あなたの番号</div>
+      <div class="end-number">${currentNumber}</div>
+      <div class="end-message">診察室で番号を<br>お伝えください</div>
+      <button class="doctor-view-link" onclick="renderDoctorView()">(医師確認画面プレビュー)</button>
+    </div>
+  `;
+}
+
+// ============================================================
+// Doctor view (positive findings only)
+// ============================================================
+function renderDoctorView() {
+  const summary = buildSummary();
+  const time = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+  let sectionsHtml = summary.length === 0 
+    ? '<div class="doctor-empty">陽性所見なし</div>'
+    : summary.map(s => `
+        <div class="doctor-section">
+          <div class="doctor-key">${s.key}</div>
+          <div class="doctor-val ${s.alert ? 'alert' : ''}">${s.val}</div>
+        </div>
+      `).join('');
+
+  document.getElementById('main').innerHTML = `
+    <div class="doctor-screen">
+      <div class="doctor-card">
+        <div class="doctor-header">
+          <div class="doctor-num">${currentNumber}</div>
+          <div class="doctor-time">${time}</div>
+        </div>
+        ${sectionsHtml}
+      </div>
+      <button class="doctor-back" onclick="renderEnd()">← 患者画面に戻る</button>
+    </div>
+  `;
+}
+
+function buildSummary() {
+  const lines = [];
+  const a = answers;
+  const seijo = a['1.2']; // 回転性 / 浮動性
+  const isAlert = (val) => val && (
+    a['5.1']?.some(x => x !== 'なし') ||
+    (a['7.3']?.some(x => x !== '上記以外、または後遺症はない'))
+  );
+
+  // 経過 line: 発症時期 + 性状 + 持続 + 回数 + 頻度
+  const keika = [];
+  if (a['1.1']) keika.push(a['1.1']);
+  if (seijo) keika.push(seijo);
+  
+  if (seijo === '回転性') {
+    if (a['2.1']) keika.push(a['2.1']);
+    if (a['2.2']) keika.push(a['2.2']);
+    if (a['2.3']) keika.push(a['2.3']);
+  } else if (seijo === '浮動性') {
+    if (a['3.1']) keika.push(a['3.1']);
+    if (a['3.2']) keika.push(a['3.2']);
+    if (a['3.3']) keika.push(a['3.3']);
+  }
+  if (keika.length) lines.push({ key: '経過', val: keika.join(' / ') });
+
+  // 性状詳細 (回転性のみ)
+  if (seijo === '回転性') {
+    const detail = [];
+    if (a['2.4'] && a['2.4'] !== 'わからない') detail.push(a['2.4']);
+    if (detail.length) lines.push({ key: '回転方向', val: detail.join(' / ') });
+  }
+
+  // 浮動性: 増悪因子
+  if (seijo === '浮動性' && a['3.4'] && a['3.4'] !== 'わからない') {
+    lines.push({ key: '増悪因子', val: a['3.4'] });
+  }
+
+  // 発症動作
+  const dousa = [];
+  const timeOfDay = a['2.5'] || a['3.5'];
+  const moment = a['2.5.1'] || a['3.5.1'];
+  if (timeOfDay === '寝起き周り' && moment) {
+    dousa.push(`寝起き周り・${moment}`);
+  }
+  if (a['2.6'] && a['2.6'] !== 'それ以外') {
+    dousa.push(`前日${a['2.6']}就寝`);
+  }
+  if (dousa.length) lines.push({ key: '発症状況', val: dousa.join(' / ') });
+
+  // 内耳症状
+  const inner = (a['4.1'] || []).filter(x => x !== 'なし');
+  if (inner.length) lines.push({ key: '内耳症状', val: inner.join(' / ') });
+
+  // 神経症状 (アラート)
+  const neuro = (a['5.1'] || []).filter(x => x !== 'なし');
+  if (neuro.length) lines.push({ key: '神経症状(新規)', val: neuro.join(' / '), alert: true });
+
+  // 外傷
+  if (a['6.1'] === 'はい') {
+    lines.push({ key: '1ヶ月以内外傷', val: 'あり', alert: true });
+  }
+
+  // 既往
+  const eiko = (a['7.1'] || []).filter(x => x !== '当てはまるものなし');
+  if (eiko.length) lines.push({ key: '既往', val: eiko.join(' / ') });
+
+  // 前庭性片頭痛スクリーニング
+  if (a['7.2'] === 'はい') {
+    lines.push({ key: '片頭痛先行', val: '半数以上で頭痛先行', alert: true });
+  }
+
+  // 後遺症
+  const koui = (a['7.3'] || []).filter(x => x !== '上記以外、または後遺症はない');
+  if (koui.length) lines.push({ key: '既存後遺症', val: koui.join(' / ') });
+
+  return lines;
+}
+
+// ============================================================
+// Init
+// ============================================================
+start();
+</script>
+</body>
+</html>

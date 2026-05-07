@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>耳鼻咽喉科 問診</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #f5f1ea;
+    --bg-card: #ffffff;
+    --ink: #1a1f2e;
+    --ink-soft: #4a5168;
+    --ink-mute: #8590a8;
+    --accent: #1f5f6b;
+    --accent-soft: #e6efef;
+    --accent-deep: #143f48;
+    --line: #d8d2c4;
+    --warn: #b04030;
+    --shadow: 0 2px 8px rgba(20,30,40,0.06);
+    --shadow-lg: 0 8px 24px rgba(20,30,40,0.12);
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'BIZ UDPGothic', 'Hiragino Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 56px 40px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .header-block {
+    text-align: center;
+    margin-bottom: 56px;
+    max-width: 760px;
+  }
+
+  .clinic-name {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink-mute);
+    letter-spacing: 0.15em;
+    margin-bottom: 24px;
+  }
+
+  .title {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 44px;
+    font-weight: 900;
+    color: var(--accent-deep);
+    line-height: 1.4;
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+  }
+
+  .subtitle {
+    font-size: 20px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  .options {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .option {
+    background: var(--bg-card);
+    border: 2px solid var(--line);
+    border-radius: 18px;
+    padding: 28px 32px;
+    font-family: inherit;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    min-height: 84px;
+  }
+
+  .option:active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    transform: scale(0.99);
+  }
+
+  .option-arrow {
+    font-size: 28px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* 準備中の症状 */
+  .option.disabled {
+    background: #ede8df;
+    border-color: var(--line);
+    color: var(--ink-mute);
+    box-shadow: none;
+  }
+
+  .option.disabled:active {
+    background: #ede8df;
+    border-color: var(--line);
+    transform: none;
+  }
+
+  .option.disabled .option-arrow {
+    color: var(--ink-mute);
+  }
+
+  .option-badge {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink-mute);
+    background: var(--bg);
+    padding: 6px 14px;
+    border-radius: 8px;
+    letter-spacing: 0.05em;
+    border: 1px solid var(--line);
+  }
+
+  /* モーダル */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20,30,40,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 460px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+
+  .modal-title {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 28px;
+    line-height: 1.4;
+  }
+
+  .modal-close {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 20px;
+    font-family: inherit;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.25s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container fade-in">
+
+  <div class="header-block">
+    <div class="title">本日のご症状を<br>お選びください</div>
+    <div class="subtitle">タップでお進みください</div>
+  </div>
+
+  <div class="options" id="options"></div>
+
+</div>
+
+<script>
+// ============================================================
+// 症状の定義 — ここに追加するだけで入口画面に反映される
+// link が null なら「準備中」表示
+// ============================================================
+const SYMPTOMS = [
+  { label: 'めまい・ふらつき',     link: 'dizziness_intake.html' },
+  { label: '難聴',                 link: null },
+  { label: '耳鳴り',               link: null },
+  { label: '顔の違和感・しびれ',   link: null },
+  { label: '声がれ',               link: null }
+];
+
+// ============================================================
+// レンダリング
+// ============================================================
+function render() {
+  const html = SYMPTOMS.map((s, idx) => {
+    if (s.link) {
+      return `
+        <button class="option" onclick="goTo('${s.link}')">
+          <span>${s.label}</span>
+          <span class="option-arrow">▶</span>
+        </button>
+      `;
+    } else {
+      return `
+        <button class="option disabled" onclick="showPreparing()">
+          <span>${s.label}</span>
+          <span class="option-badge">準備中</span>
+        </button>
+      `;
+    }
+  }).join('');
+  document.getElementById('options').innerHTML = html;
+}
+
+function goTo(url) {
+  window.location.href = url;
+}
+
+function showPreparing() {
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal-overlay" id="modal" onclick="if(event.target.id==='modal')closeModal()">
+      <div class="modal">
+        <div class="modal-title">準備中です</div>
+        <button class="modal-close" onclick="closeModal()">閉じる</button>
+      </div>
+    </div>
+  `);
+}
+
+function closeModal() {
+  const m = document.getElementById('modal');
+  if (m) m.remove();
+}
+
+render();
+</script>
+</body>
+</html>
