@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>耳鳴問診</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+
+<!-- Supabaseクライアントライブラリ(CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  :root {
+    --bg: #f5f1ea;
+    --bg-card: #ffffff;
+    --ink: #1a1f2e;
+    --ink-soft: #4a5168;
+    --ink-mute: #8590a8;
+    --accent: #1f5f6b;
+    --accent-soft: #e6efef;
+    --accent-deep: #143f48;
+    --line: #d8d2c4;
+    --warn: #b04030;
+    --shadow: 0 2px 8px rgba(20,30,40,0.06);
+    --shadow-lg: 0 8px 24px rgba(20,30,40,0.12);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'BIZ UDPGothic', 'Hiragino Sans', sans-serif; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; user-select: none; }
+  body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+  .header { height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid var(--line); background: var(--bg); }
+  .back-btn { background: none; border: 2px solid var(--line); border-radius: 12px; padding: 10px 18px; font-family: inherit; font-size: 18px; font-weight: 700; color: var(--ink-soft); cursor: pointer; transition: all 0.15s ease; min-width: 90px; }
+  .back-btn:active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .back-btn[disabled] { opacity: 0.25; pointer-events: none; }
+  .restart-btn { background: none; border: 2px solid var(--line); border-radius: 12px; padding: 10px 18px; font-family: inherit; font-size: 16px; font-weight: 700; color: var(--ink-mute); cursor: pointer; }
+  .restart-btn:active { background: #fdf0ed; border-color: var(--warn); color: var(--warn); }
+  .main { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 32px 40px 40px; display: flex; flex-direction: column; }
+  .question-wrap { max-width: 760px; margin: 0 auto; width: 100%; flex: 1; display: flex; flex-direction: column; }
+  .qnum { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.12em; color: var(--accent); margin-bottom: 16px; text-transform: uppercase; }
+  .question { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 30px; font-weight: 700; line-height: 1.5; color: var(--ink); margin-bottom: 8px; }
+  .question .em { color: var(--accent); border-bottom: 3px solid var(--accent); padding-bottom: 2px; }
+  .subtext { font-size: 16px; color: var(--ink-mute); margin-bottom: 28px; font-weight: 400; }
+  .illustration { display: flex; justify-content: center; align-items: center; margin: 0 0 28px; }
+  .illustration svg { width: 100%; max-width: 240px; height: auto; }
+  .pulse-note { font-size: 17px; line-height: 1.7; color: var(--ink); margin: 0 0 28px; background: var(--accent-soft); padding: 16px 20px; border-radius: 12px; border-left: 4px solid var(--accent); }
+  .options { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+  .options.grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .options.grid2 .option { justify-content: center; text-align: center; min-height: 64px; padding: 18px; }
+  .option { background: var(--bg-card); border: 2px solid var(--line); border-radius: 16px; padding: 22px 26px; font-family: inherit; font-size: 22px; font-weight: 700; color: var(--ink); text-align: left; cursor: pointer; transition: all 0.15s ease; box-shadow: var(--shadow); line-height: 1.4; display: flex; align-items: center; gap: 16px; min-height: 70px; }
+  .option:active { background: var(--accent-soft); border-color: var(--accent); transform: scale(0.99); }
+  .option.selected { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-deep); }
+  .checkmark { width: 28px; height: 28px; border: 2px solid var(--line); border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; color: white; background: white; }
+  .option.selected .checkmark { background: var(--accent); border-color: var(--accent); }
+  .option.selected .checkmark::after { content: '✓'; font-weight: 900; }
+  .footer { flex-shrink: 0; padding: 16px 40px 24px; background: var(--bg); display: flex; justify-content: center; }
+  .next-btn { background: var(--accent); color: white; border: none; border-radius: 16px; padding: 20px 60px; font-family: inherit; font-size: 22px; font-weight: 700; cursor: pointer; box-shadow: var(--shadow-lg); transition: all 0.15s ease; min-width: 280px; }
+  .next-btn:active { background: var(--accent-deep); transform: scale(0.98); }
+  .next-btn[disabled] { background: var(--ink-mute); opacity: 0.4; pointer-events: none; }
+  .start-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+  .start-title { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 56px; font-weight: 900; color: var(--accent-deep); letter-spacing: 0.05em; margin-bottom: 8px; line-height: 1.2; }
+  .start-tagline { font-size: 18px; color: var(--ink-mute); margin-bottom: 56px; letter-spacing: 0.1em; }
+  .start-emphasis { font-size: 22px; font-weight: 700; line-height: 1.7; color: var(--ink); max-width: 600px; margin-bottom: 24px; background: var(--accent-soft); padding: 24px 32px; border-radius: 12px; border-left: 4px solid var(--accent); text-align: left; }
+  .start-note { font-size: 16px; line-height: 1.7; color: var(--ink-mute); margin-bottom: 48px; }
+  .start-btn { background: var(--accent); color: white; border: none; border-radius: 20px; padding: 26px 80px; font-family: inherit; font-size: 26px; font-weight: 700; cursor: pointer; box-shadow: var(--shadow-lg); letter-spacing: 0.05em; }
+  .start-btn:active { background: var(--accent-deep); transform: scale(0.98); }
+  .end-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+  .end-thanks { font-size: 24px; color: var(--ink-soft); margin-bottom: 32px; }
+  .end-label { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 0.15em; color: var(--ink-mute); margin-bottom: 12px; }
+  .end-number { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 180px; font-weight: 900; line-height: 1; color: var(--accent); letter-spacing: -0.02em; margin-bottom: 32px; }
+  .end-message { font-size: 26px; font-weight: 700; line-height: 1.6; color: var(--ink); max-width: 600px; background: var(--accent-soft); padding: 24px 32px; border-radius: 16px; border-left: 6px solid var(--accent); }
+  .sending-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+  .sending-spinner { width: 80px; height: 80px; border: 6px solid var(--accent-soft); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 32px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .sending-message { font-size: 24px; color: var(--ink-soft); font-weight: 700; }
+  .end-number.local { color: var(--warn); }
+  .end-error-note { margin-top: 16px; font-size: 14px; color: var(--warn); background: #fdf0ed; padding: 12px 20px; border-radius: 8px; border-left: 3px solid var(--warn); max-width: 500px; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20,30,40,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
+  .modal { background: white; border-radius: 20px; padding: 40px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; }
+  .modal-title { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 26px; font-weight: 700; color: var(--ink); margin-bottom: 32px; line-height: 1.4; }
+  .modal-buttons { display: flex; gap: 16px; flex-direction: column; }
+  .modal-no { background: var(--accent); color: white; border: none; border-radius: 14px; padding: 22px; font-family: inherit; font-size: 22px; font-weight: 700; cursor: pointer; order: 1; }
+  .modal-yes { background: white; color: var(--warn); border: 2px solid var(--line); border-radius: 14px; padding: 18px; font-family: inherit; font-size: 18px; font-weight: 700; cursor: pointer; order: 2; margin-top: 32px; }
+  .fade-in { animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="header" id="header" style="display:none">
+  <button class="back-btn" id="backBtn" onclick="goBack()">← 戻る</button>
+  <button class="restart-btn" onclick="confirmRestart()">最初から</button>
+</div>
+
+<div class="main" id="main"></div>
+
+<div class="footer" id="footer" style="display:none">
+  <button class="next-btn" id="nextBtn" onclick="confirmMulti()">次へ進む</button>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://edhukoepusufrmyiyahs.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_4Z_cycy4Y5Y-XKK1OtgB_g_QMjcliIs';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+const FLOW = {
+  '1.1': {
+    section: '側',
+    question: 'どちらの耳に耳鳴がありますか?',
+    type: 'single',
+    layout: 'grid2',
+    options: [
+      { label: '右' },
+      { label: '左' },
+      { label: '両側または不明' }
+    ],
+    next: '1.2'
+  },
+  '1.2': {
+    section: '発症時期',
+    question: 'いつから耳鳴がありますか?',
+    subtext: '一番近いものを1つ選んでください',
+    type: 'single',
+    options: [
+      { label: '24時間以内' },
+      { label: '1週間以内' },
+      { label: '1ヶ月以内' },
+      { label: '3ヶ月以内' },
+      { label: 'それ以上前' }
+    ],
+    next: '1.3'
+  },
+  '1.3': {
+    section: '性状',
+    question: '耳鳴はどんな鳴り方ですか?',
+    type: 'single',
+    options: [
+      { label: 'ずっと、または長く鳴る', value: '持続性', next: '2.1' },
+      { label: '短く繰り返し鳴る、または波がある', value: '断続性', next: '3.1' }
+    ]
+  },
+
+  // 持続性ルート
+  '2.1': {
+    section: '音の高さ',
+    question: '音の高さは?',
+    type: 'single',
+    options: [
+      { label: '低い(ブーンという音)' },
+      { label: '高い(キーンという音)' },
+      { label: '両方・その他' }
+    ],
+    next: '2.2'
+  },
+  '2.2': {
+    section: '持続時間',
+    question: '1回の耳鳴はどのくらい続きますか?',
+    type: 'single',
+    options: [
+      { label: '〜1分' },
+      { label: '数分〜10分' },
+      { label: '数分〜1時間' },
+      { label: 'ずっと鳴っている' }
+    ],
+    next: '2.3'
+  },
+  '2.3': {
+    section: 'きっかけ',
+    question: '何かきっかけはありましたか?',
+    subtext: '当てはまるものを1つ選んでください',
+    type: 'single',
+    options: [
+      { label: '大音量を聞いた(コンサート・イヤホンなど)' },
+      { label: '耳いじり・耳掃除' },
+      { label: '睡眠不足・疲労・ストレス' },
+      { label: '思い当たらない' }
+    ],
+    next: '4.1'
+  },
+
+  // 断続性ルート
+  '3.1': {
+    section: '音の高さ',
+    question: '音の高さは?',
+    type: 'single',
+    options: [
+      { label: '低い(グワーン、グワーンという音)' },
+      { label: '高い(ヒンヒン、キンキンという音)' }
+    ],
+    next: '3.2'
+  },
+  '3.2': {
+    section: '持続時間',
+    question: '1回の耳鳴はどのくらい続きますか?',
+    type: 'single',
+    options: [
+      { label: '〜数秒' },
+      { label: '数秒〜1分' },
+      { label: 'それ以上' }
+    ],
+    next: '3.3'
+  },
+  // 拍動性判定の前ガイド
+  '3.3': {
+    section: '拍動性ガイド',
+    question: '今、耳鳴がしていますか?',
+    subtext: '次の質問で脈と比べていただきます',
+    type: 'single',
+    layout: 'grid2',
+    options: [
+      { label: 'はい、今鳴っている', value: 'はい', next: '3.4' },
+      { label: 'いいえ、今は鳴っていない', value: 'いいえ', next: '4.1' }
+    ]
+  },
+  // 拍動性判定本体
+  '3.4': {
+    section: '拍動性判定',
+    question: '<span class="em">手首の脈</span>に指を当てて、耳鳴のリズムと比べてください',
+    subtext: '手のひらを上に向けて、印(○)の場所に反対の手の指を当てます',
+    illustration: `<svg viewBox="0 0 240 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="手首の脈の位置">
+      <g fill="#fde6cf" stroke="#8b5a3c" stroke-width="3" stroke-linejoin="round">
+        <rect x="100" y="40"  width="22" height="115" rx="10"/>
+        <rect x="127" y="22"  width="22" height="133" rx="10"/>
+        <rect x="154" y="32"  width="22" height="123" rx="10"/>
+        <rect x="181" y="54"  width="20" height="101" rx="9"/>
+        <rect x="92"  y="140" width="115" height="105" rx="20"/>
+        <rect x="112" y="240" width="75"  height="65"  rx="10"/>
+        <ellipse cx="77" cy="195" rx="22" ry="34" transform="rotate(-25 77 195)"/>
+      </g>
+      <path d="M 97 180 Q 92 210 100 240" fill="none" stroke="#b58858" stroke-width="2" opacity="0.4"/>
+      <circle cx="114" cy="252" r="15" fill="none" stroke="#b04030" stroke-width="3" stroke-dasharray="5 4">
+        <animate attributeName="r" values="15;20;15" dur="1.1s" repeatCount="indefinite"/>
+        <animate attributeName="stroke-opacity" values="1;0.5;1" dur="1.1s" repeatCount="indefinite"/>
+      </circle>
+      <line x1="58" y1="285" x2="100" y2="258" stroke="#b04030" stroke-width="2.5" stroke-linecap="round"/>
+      <polygon points="100,258 91,257 95,265" fill="#b04030"/>
+      <text x="20" y="300" font-family="'Zen Kaku Gothic New', sans-serif" font-size="18" font-weight="700" fill="#b04030">ここ</text>
+    </svg>`,
+    type: 'single',
+    options: [
+      { label: '脈と同じ速さ' },
+      { label: '脈より速い(倍くらい)' },
+      { label: '比べられない・わからない' }
+    ],
+    next: '4.1'
+  },
+
+  // 共通(分岐後合流)
+  '4.1': {
+    section: '過去の耳鳴',
+    question: '過去に同じような耳鳴を経験したことがありますか?',
+    type: 'single',
+    layout: 'grid2',
+    options: [
+      { label: 'はい' },
+      { label: 'いいえ' }
+    ],
+    next: '4.2'
+  },
+  '4.2': {
+    section: '既往歴',
+    question: '以下の既往はありますか?',
+    subtext: '当てはまるものをすべて選んでください',
+    type: 'multi',
+    options: [
+      { label: '突発性難聴' },
+      { label: 'メニエール病(と言われたことがある)' },
+      { label: '耳の手術歴' },
+      { label: '脳梗塞' },
+      { label: '腎機能障害' },
+      { label: '糖尿病' },
+      { label: 'B型肝炎' },
+      { label: 'なし', exclusive: true }
+    ],
+    nextLogic: 'after42'
+  },
+  '4.3': {
+    section: '通院状況',
+    question: '<span class="em">糖尿病またはB型肝炎</span>について、定期的に通院していますか?',
+    type: 'single',
+    options: [
+      { label: 'はい、通院している' },
+      { label: 'いいえ、通院していない' }
+    ],
+    next: 'END'
+  }
+};
+
+let currentNumber = null;
+let currentNumberIsLocal = false;
+let currentQuestionId = null;
+let history = [];
+let answers = {};
+let multiSelectBuffer = [];
+
+function start() {
+  currentNumber = null;
+  currentNumberIsLocal = false;
+  currentQuestionId = null;
+  history = [];
+  answers = {};
+  multiSelectBuffer = [];
+  renderStart();
+}
+
+async function submitToSupabase() {
+  const { data: numberData, error: numberError } = await sb.rpc('issue_patient_number');
+  if (numberError) throw new Error('採番失敗: ' + numberError.message);
+  const patientNumber = numberData;
+  const { error: insertError } = await sb.from('tinnitus_intake').insert({ patient_no: patientNumber, answers: answers });
+  if (insertError) throw new Error('保存失敗: ' + insertError.message);
+  return patientNumber;
+}
+
+function generateLocalNumber() { return Math.floor(Math.random() * 999) + 1; }
+
+function renderStart() {
+  document.getElementById('header').style.display = 'none';
+  document.getElementById('footer').style.display = 'none';
+  document.getElementById('main').innerHTML = `
+    <div class="start-screen fade-in">
+      <div class="start-title">耳鳴の問診</div>
+      <div class="start-tagline">タップでお答えください</div>
+      <div class="start-emphasis">気になっている<br><strong>耳鳴(みみなり)</strong>について<br>お答えください</div>
+      <div class="start-note">最後まで回答すると<br>診察用の番号が表示されます</div>
+      <button class="start-btn" onclick="goToQuestion('1.1')">問診を始める</button>
+    </div>
+  `;
+}
+
+function renderQuestion(qid) {
+  const q = FLOW[qid];
+  if (!q) return;
+  document.getElementById('header').style.display = 'flex';
+  document.getElementById('backBtn').disabled = history.length === 0;
+  const isMulti = q.type === 'multi';
+  const layoutClass = q.layout === 'grid2' ? 'grid2' : '';
+  let optionsHtml = q.options.map((opt, idx) => {
+    const isSelected = isMulti && multiSelectBuffer.includes(opt.label);
+    const checkmarkHtml = isMulti ? '<div class="checkmark"></div>' : '';
+    return `<button class="option ${isSelected ? 'selected' : ''}" onclick="${isMulti ? `toggleMulti('${qid}', ${idx})` : `selectSingle('${qid}', ${idx})`}">${checkmarkHtml}<span>${opt.label}</span></button>`;
+  }).join('');
+  document.getElementById('main').innerHTML = `
+    <div class="question-wrap fade-in">
+      <div class="qnum">${q.section}</div>
+      <div class="question">${q.question}</div>
+      ${q.subtext ? `<div class="subtext">${q.subtext}</div>` : ''}
+      ${q.illustration ? `<div class="illustration">${q.illustration}</div>` : ''}
+      <div class="options ${layoutClass}">${optionsHtml}</div>
+    </div>
+  `;
+  if (isMulti) { document.getElementById('footer').style.display = 'flex'; updateNextBtn(); }
+  else { document.getElementById('footer').style.display = 'none'; }
+}
+
+function renderSending() {
+  document.getElementById('header').style.display = 'none';
+  document.getElementById('footer').style.display = 'none';
+  document.getElementById('main').innerHTML = `<div class="sending-screen fade-in"><div class="sending-spinner"></div><div class="sending-message">送信しています...</div></div>`;
+}
+
+async function finalize() {
+  renderSending();
+  try {
+    const patientNumber = await submitToSupabase();
+    currentNumber = String(patientNumber).padStart(3, '0');
+    currentNumberIsLocal = false;
+  } catch (err) {
+    console.error('[finalize] Supabase送信失敗:', err);
+    currentNumber = String(generateLocalNumber()).padStart(3, '0');
+    currentNumberIsLocal = true;
+  }
+  renderEnd();
+}
+
+function selectSingle(qid, idx) {
+  const q = FLOW[qid];
+  const opt = q.options[idx];
+  answers[qid] = opt.value || opt.label;
+  let next;
+  if (opt.next) next = opt.next;
+  else if (q.next) next = q.next;
+  history.push(qid);
+  if (next === 'END') finalize(); else goToQuestion(next);
+}
+
+function toggleMulti(qid, idx) {
+  const q = FLOW[qid];
+  const opt = q.options[idx];
+  if (opt.exclusive) {
+    if (multiSelectBuffer.includes(opt.label)) multiSelectBuffer = [];
+    else multiSelectBuffer = [opt.label];
+  } else {
+    multiSelectBuffer = multiSelectBuffer.filter(x => { const o = q.options.find(o => o.label === x); return !o || !o.exclusive; });
+    if (multiSelectBuffer.includes(opt.label)) multiSelectBuffer = multiSelectBuffer.filter(x => x !== opt.label);
+    else multiSelectBuffer.push(opt.label);
+  }
+  renderQuestion(qid);
+}
+
+function updateNextBtn() { document.getElementById('nextBtn').disabled = multiSelectBuffer.length === 0; }
+
+function confirmMulti() {
+  const qid = currentQuestionId;
+  if (multiSelectBuffer.length === 0) return;
+  answers[qid] = [...multiSelectBuffer];
+  history.push(qid);
+  const q = FLOW[qid];
+  let next;
+  if (q.nextLogic === 'after42') next = computeAfter42();
+  else next = q.next;
+  if (next === 'END') finalize(); else goToQuestion(next);
+}
+
+function computeAfter42() {
+  // 4.2 で糖尿病/B型肝炎が選ばれていれば 4.3 (通院状況) を聞く
+  const selected = answers['4.2'] || [];
+  if ((selected.includes('糖尿病') || selected.includes('B型肝炎')) && !answers['4.3']) return '4.3';
+  return 'END';
+}
+
+function goToQuestion(qid) {
+  currentQuestionId = qid;
+  const q = FLOW[qid];
+  if (q && q.type === 'multi') multiSelectBuffer = answers[qid] ? [...answers[qid]] : [];
+  renderQuestion(qid);
+}
+
+function goBack() {
+  if (history.length === 0) return;
+  const prev = history.pop();
+  delete answers[prev];
+  // 1.3(性状)を変えるとルート(2.x or 3.x)が変わるので下流を全部クリア
+  if (prev === '1.3') {
+    ['2.1','2.2','2.3','3.1','3.2','3.3','3.4'].forEach(k => delete answers[k]);
+  }
+  // 3.3(今鳴っているか)を変えると 3.4 の通り道が変わるのでクリア
+  if (prev === '3.3') { delete answers['3.4']; }
+  // 4.2 を変更したら 4.3 (通院状況) もクリア(対象疾患が外れる可能性)
+  if (prev === '4.2') { delete answers['4.3']; }
+  goToQuestion(prev);
+}
+
+function confirmRestart() {
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal-overlay" id="modal" onclick="if(event.target.id==='modal')closeModal()">
+      <div class="modal">
+        <div class="modal-title">本当に最初に戻りますか?<br>すべての回答が消えます</div>
+        <div class="modal-buttons">
+          <button class="modal-no" onclick="closeModal()">いいえ、続ける</button>
+          <button class="modal-yes" onclick="closeModal();start()">はい、最初から</button>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+function closeModal() { const m = document.getElementById('modal'); if (m) m.remove(); }
+
+function renderEnd() {
+  document.getElementById('header').style.display = 'none';
+  document.getElementById('footer').style.display = 'none';
+  const errorNote = currentNumberIsLocal ? '<div class="end-error-note">サーバーへの送信に失敗しました。診察室で医師にこの画面を見せてください。</div>' : '';
+  document.getElementById('main').innerHTML = `
+    <div class="end-screen fade-in">
+      <div class="end-thanks">ご回答ありがとうございました</div>
+      <div class="end-label">あなたの番号</div>
+      <div class="end-number ${currentNumberIsLocal ? 'local' : ''}">${currentNumber}</div>
+      <div class="end-message">診察室で番号を<br>お伝えください</div>
+      ${errorNote}
+    </div>
+  `;
+}
+
+start();
+</script>
+</body>
+</html>

@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>問診確認</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  :root {
+    --bg: #0f1419;
+    --bg-card: #1a2030;
+    --bg-input: #232b3d;
+    --line: #2a3142;
+    --line-strong: #3a4358;
+    --ink: #e6e8eb;
+    --ink-soft: #b0b8c8;
+    --ink-mute: #6b7488;
+    --accent: #5fb8c8;
+    --accent-deep: #4a9aab;
+    --accent-soft: rgba(95, 184, 200, 0.12);
+    --warn: #ff8a7a;
+    --warn-soft: rgba(255, 138, 122, 0.12);
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'BIZ UDPGothic', 'Hiragino Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  #app {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ==================== Login screen ==================== */
+  .login-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+  }
+
+  .login-title {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .login-sub {
+    font-size: 14px;
+    color: var(--ink-mute);
+    margin-bottom: 48px;
+    letter-spacing: 0.1em;
+  }
+
+  .login-form {
+    width: 100%;
+    max-width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .input {
+    width: 100%;
+    background: var(--bg-input);
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 20px;
+    font-family: inherit;
+    font-size: 17px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .input:focus {
+    border-color: var(--accent);
+  }
+
+  .input::placeholder {
+    color: var(--ink-mute);
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: #0f1419;
+    border: none;
+    border-radius: 12px;
+    padding: 18px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  .btn-primary:active {
+    background: var(--accent-deep);
+    transform: scale(0.99);
+  }
+
+  .btn-primary[disabled] {
+    background: var(--line-strong);
+    color: var(--ink-mute);
+    pointer-events: none;
+  }
+
+  .login-error {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: var(--warn-soft);
+    border-left: 3px solid var(--warn);
+    border-radius: 6px;
+    color: var(--warn);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ==================== Search screen ==================== */
+  .search-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .search-header-title {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    letter-spacing: 0.05em;
+  }
+
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--ink-mute);
+    cursor: pointer;
+  }
+
+  .icon-btn:active {
+    background: var(--bg-card);
+  }
+
+  .search-body {
+    flex: 1;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .search-input-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .number-input {
+    flex: 1;
+    background: var(--bg-input);
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--ink);
+    text-align: center;
+    letter-spacing: 0.1em;
+    outline: none;
+    transition: border-color 0.15s ease;
+    -moz-appearance: textfield;
+  }
+
+  .number-input::-webkit-outer-spin-button,
+  .number-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .number-input:focus {
+    border-color: var(--accent);
+  }
+
+  .number-input::placeholder {
+    color: var(--ink-mute);
+    font-weight: 500;
+  }
+
+  .search-btn {
+    background: var(--accent);
+    color: #0f1419;
+    border: none;
+    border-radius: 14px;
+    padding: 0 24px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    min-width: 90px;
+  }
+
+  .search-btn:active {
+    background: var(--accent-deep);
+  }
+
+  .search-btn[disabled] {
+    background: var(--line-strong);
+    color: var(--ink-mute);
+    pointer-events: none;
+  }
+
+  .recent-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .recent-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding: 0 4px;
+  }
+
+  .recent-title {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+  }
+
+  .refresh-btn {
+    background: none;
+    border: none;
+    color: var(--ink-mute);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  .refresh-btn:active {
+    background: var(--bg-card);
+    color: var(--accent);
+  }
+
+  .recent-list {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .recent-row {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line);
+    transition: background 0.1s ease;
+  }
+
+  .recent-row:last-child {
+    border-bottom: none;
+  }
+
+  .recent-row:active {
+    background: var(--bg-input);
+  }
+
+  .recent-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .recent-num {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  .recent-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  .recent-time {
+    font-size: 13px;
+    color: var(--ink-mute);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+
+  .recent-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--ink-mute);
+    font-size: 14px;
+    background: var(--bg-card);
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+  }
+
+  .search-footer {
+    padding: 16px 20px;
+    text-align: center;
+    border-top: 1px solid var(--line);
+  }
+
+  .text-link {
+    background: none;
+    border: none;
+    color: var(--ink-mute);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 8px 12px;
+  }
+
+  .text-link:active {
+    color: var(--accent);
+  }
+
+  /* ==================== Detail screen ==================== */
+  .detail-header {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .back-btn {
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+
+  .back-btn:active {
+    background: var(--bg-card);
+  }
+
+  .detail-body {
+    flex: 1;
+    padding: 24px 16px;
+    overflow-y: auto;
+  }
+
+  .detail-card {
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--bg-card);
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .detail-card-header {
+    padding: 24px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .detail-num {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+
+  .detail-meta {
+    text-align: right;
+  }
+
+  .detail-time {
+    font-size: 14px;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .detail-date {
+    font-size: 11px;
+    color: var(--ink-mute);
+    margin-top: 2px;
+  }
+
+  .detail-sections {
+    padding: 8px 28px 24px;
+  }
+
+  .detail-section {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .detail-section:last-child {
+    border-bottom: none;
+  }
+
+  .detail-key {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--ink-mute);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+  }
+
+  .detail-val {
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .detail-section.alert {
+    background: var(--warn-soft);
+    margin: 8px -28px;
+    padding: 14px 28px;
+    border-bottom: none;
+    border-left: 4px solid var(--warn);
+  }
+
+  .detail-section.alert .detail-key {
+    color: var(--warn);
+  }
+
+  .detail-section.alert .detail-val {
+    color: var(--warn);
+    font-weight: 700;
+  }
+
+  .detail-empty {
+    padding: 60px 24px;
+    text-align: center;
+    color: var(--ink-mute);
+  }
+
+  .detail-other-matches {
+    max-width: 480px;
+    margin: 16px auto 0;
+    padding: 12px 20px;
+    background: var(--bg-card);
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--ink-mute);
+    text-align: center;
+  }
+
+  .detail-other-matches a {
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  /* ==================== Loading & error ==================== */
+  .loading {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-mute);
+    font-size: 14px;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 14px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    border: 1px solid var(--warn);
+    color: var(--warn);
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    z-index: 100;
+    box-shadow: var(--shadow);
+    animation: fadeIn 0.2s ease;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="loading">
+    <div class="spinner"></div>
+    起動中...
+  </div>
+</div>
+
+<script>
+// ============================================================
+// Supabase 接続設定 (患者画面と同じ Publishable key を使用)
+// ============================================================
+const SUPABASE_URL = 'https://edhukoepusufrmyiyahs.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_4Z_cycy4Y5Y-XKK1OtgB_g_QMjcliIs';
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+// ============================================================
+// 将来の症状追加に備えた、テーブル設定の集約点
+// ここに新しい症状(hearing_intake など)を追加するだけで、
+// 検索・一覧・詳細表示が自動拡張される設計
+// ============================================================
+const SYMPTOM_TABLES = [
+  {
+    table: 'dizziness_intake',
+    label: 'めまい・ふらつき',
+    summarize: buildDizzinessSummary
+  },
+  {
+    table: 'hearing_intake',
+    label: '難聴',
+    summarize: buildHearingSummary
+  },
+  {
+    table: 'tinnitus_intake',
+    label: '耳鳴',
+    summarize: buildTinnitusSummary
+  },
+  {
+    table: 'facial_palsy_intake',
+    label: '顔面神経麻痺',
+    summarize: buildFacialPalsySummary
+  },
+];
+
+// ============================================================
+// State
+// ============================================================
+let state = {
+  screen: 'loading',     // 'login' | 'search' | 'detail'
+  session: null,
+  recentList: [],         // [{table, patient_no, created_at, label}]
+  detail: null,           // {records: [...], requestedNo: N}
+  loginError: null,
+  loginBusy: false
+};
+
+const app = document.getElementById('app');
+
+// ============================================================
+// 初期化:既存セッションをチェック
+// ============================================================
+async function init() {
+  try {
+    const { data, error } = await sb.auth.getSession();
+    if (error) throw error;
+
+    if (data.session) {
+      state.session = data.session;
+      await loadRecent();
+      renderSearch();
+    } else {
+      renderLogin();
+    }
+  } catch (err) {
+    console.error('init error:', err);
+    renderLogin();
+  }
+
+  // セッションの自動更新・失効を監視
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT' || !session) {
+      state.session = null;
+      renderLogin();
+    } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      state.session = session;
+    }
+  });
+}
+
+// ============================================================
+// 認証
+// ============================================================
+async function doLogin() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!email || !password) {
+    state.loginError = 'メールアドレスとパスワードを入力してください';
+    renderLogin();
+    return;
+  }
+
+  state.loginBusy = true;
+  state.loginError = null;
+  renderLogin();
+
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+
+    state.session = data.session;
+    state.loginBusy = false;
+    await loadRecent();
+    renderSearch();
+  } catch (err) {
+    console.error('login error:', err);
+    state.loginBusy = false;
+    state.loginError =
+      err.message?.includes('Invalid login') || err.message?.includes('credentials')
+        ? 'メールアドレスかパスワードが違います'
+        : '通信エラー: ' + (err.message || '不明');
+    renderLogin();
+  }
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  state.session = null;
+  state.recentList = [];
+  state.detail = null;
+  renderLogin();
+}
+
+// ============================================================
+// データ取得
+// ============================================================
+function todayStartISO() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  return start.toISOString();
+}
+
+// 本日の問診一覧(全症状横断、created_at降順)
+async function loadRecent() {
+  const since = todayStartISO();
+  const allRows = [];
+
+  for (const cfg of SYMPTOM_TABLES) {
+    const { data, error } = await sb
+      .from(cfg.table)
+      .select('id, patient_no, created_at')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error(`loadRecent error for ${cfg.table}:`, error);
+      continue;
+    }
+    for (const row of (data || [])) {
+      allRows.push({
+        table: cfg.table,
+        label: cfg.label,
+        patient_no: row.patient_no,
+        created_at: row.created_at
+      });
+    }
+  }
+
+  // 全症状をまとめて降順
+  allRows.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  state.recentList = allRows;
+}
+
+// 番号での検索(直近24時間以内、複数テーブル横断)
+async function loadDetailByNumber(no) {
+  const records = [];
+
+  for (const cfg of SYMPTOM_TABLES) {
+    const { data, error } = await sb
+      .from(cfg.table)
+      .select('id, patient_no, answers, created_at')
+      .eq('patient_no', no)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error(`loadDetail error for ${cfg.table}:`, error);
+      continue;
+    }
+    for (const row of (data || [])) {
+      records.push({
+        table: cfg.table,
+        label: cfg.label,
+        summarize: cfg.summarize,
+        ...row
+      });
+    }
+  }
+
+  records.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  state.detail = { requestedNo: no, records, selectedIdx: 0 };
+}
+
+// ============================================================
+// 陽性所見抽出 (患者画面の buildSummary を踏襲)
+// ============================================================
+function buildDizzinessSummary(answers) {
+  const lines = [];
+  const a = answers || {};
+  const seijo = a['1.2'];
+
+  // 経過
+  const keika = [];
+  if (a['1.1']) keika.push(a['1.1']);
+  if (seijo) keika.push(seijo);
+  if (seijo === '回転性') {
+    if (a['2.1']) keika.push(a['2.1']);
+    if (a['2.2']) keika.push(a['2.2']);
+    if (a['2.3']) keika.push(a['2.3']);
+  } else if (seijo === '浮動性') {
+    if (a['3.1']) keika.push(a['3.1']);
+    if (a['3.2']) keika.push(a['3.2']);
+    if (a['3.3']) keika.push(a['3.3']);
+  }
+  if (keika.length) lines.push({ key: '経過', val: keika.join(' / ') });
+
+  // 回転方向
+  if (seijo === '回転性' && a['2.4'] && a['2.4'] !== 'わからない') {
+    lines.push({ key: '回転方向', val: a['2.4'] });
+  }
+
+  // 増悪因子
+  if (seijo === '浮動性' && a['3.4'] && a['3.4'] !== 'わからない') {
+    lines.push({ key: '増悪因子', val: a['3.4'] });
+  }
+
+  // 発症状況
+  const dousa = [];
+  const timeOfDay = a['2.5'] || a['3.5'];
+  const moment = a['2.5.1'] || a['3.5.1'];
+  if (timeOfDay === '寝起き周り' && moment) {
+    dousa.push(`寝起き周り・${moment}`);
+  }
+  if (a['2.6'] && a['2.6'] !== 'それ以外') {
+    dousa.push(`前日${a['2.6']}就寝`);
+  }
+  if (dousa.length) lines.push({ key: '発症状況', val: dousa.join(' / ') });
+
+  // 内耳症状
+  const inner = (a['4.1'] || []).filter(x => x !== 'なし');
+  if (inner.length) lines.push({ key: '内耳症状', val: inner.join(' / ') });
+
+  // 神経症状(アラート)
+  const neuro = (a['5.1'] || []).filter(x => x !== 'なし');
+  if (neuro.length) lines.push({ key: '神経症状(新規)', val: neuro.join(' / '), alert: true });
+
+  // 外傷
+  if (a['6.1'] === 'はい') {
+    lines.push({ key: '1ヶ月以内外傷', val: 'あり', alert: true });
+  }
+
+  // 既往
+  // 糖尿病・B型肝炎の存在自体は alert しない(採血で重症度はわかる/通院 status のみ重要)
+  // 腎機能障害だけ alert(イソバイド使用判断のため)
+  const eiko = (a['7.1'] || []).filter(x => x !== '当てはまるものなし');
+  if (eiko.length) {
+    const hasRenal = eiko.includes('腎機能障害');
+    lines.push({ key: '既往', val: eiko.join(' / '), alert: hasRenal });
+  }
+
+  // 前庭性片頭痛スクリーニング
+  if (a['7.2'] === 'はい') {
+    lines.push({ key: '片頭痛先行', val: '半数以上で頭痛先行', alert: true });
+  }
+
+  // 後遺症
+  const koui = (a['7.3'] || []).filter(x => x !== '上記以外、または後遺症はない');
+  if (koui.length) lines.push({ key: '既存後遺症', val: koui.join(' / ') });
+
+  // 通院状況(糖尿病/B型肝炎の follow-up):未通院なら alert
+  if (a['7.4']) {
+    const isUntreated = a['7.4'] === 'いいえ、通院していない';
+    lines.push({ key: 'DM/HBV通院', val: a['7.4'], alert: isUntreated });
+  }
+
+  return lines;
+}
+
+// ============================================================
+// 陽性所見抽出(難聴)
+// ============================================================
+function buildHearingSummary(answers) {
+  const lines = [];
+  const a = answers || {};
+
+  // 側
+  if (a['1.1']) lines.push({ key: '側', val: a['1.1'] });
+
+  // 発症期間 + 日数(2週間以内のときのみ日数が記録されている)
+  const onsetBucket = a['1.2'];
+  const days = a['1.3a'] || a['1.3b'];
+  if (onsetBucket) {
+    let val = onsetBucket;
+    if (days && (onsetBucket === '今日から1週間以内' || onsetBucket === '1〜2週間前から')) {
+      val += ` (${days})`;
+    }
+    // 1ヶ月以内ならステロイド適応の判断窓 → 強調
+    const isAcute = onsetBucket === '今日から1週間以内'
+                 || onsetBucket === '1〜2週間前から'
+                 || onsetBucket === '2週間〜1ヶ月前から';
+    lines.push({ key: '発症', val, alert: isAcute });
+  }
+
+  // 既往・指摘
+  // 糖尿病・B型肝炎の存在自体は alert しない(採血で重症度判断/通院 status のみ重要)
+  // 腎機能障害だけ alert
+  const eiko = (a['2.1'] || []).filter(x => x !== 'どれも当てはまらない');
+  if (eiko.length) {
+    const hasRenal = eiko.includes('腎機能障害');
+    lines.push({ key: '既往・指摘', val: eiko.join(' / '), alert: hasRenal });
+  }
+
+  // 通院状況(糖尿病/B型肝炎の follow-up):未通院なら alert
+  if (a['2.2']) {
+    const isUntreated = a['2.2'] === 'いいえ、通院していない';
+    lines.push({ key: 'DM/HBV通院', val: a['2.2'], alert: isUntreated });
+  }
+
+  // 補聴器・集音器(使っていない場合は省略)
+  if (a['3.1'] && a['3.1'] !== '使っていない') {
+    lines.push({ key: '補聴器・集音器', val: a['3.1'] });
+  }
+
+  // きっかけ(2週間以内のときのみ収集、「特に思い当たらない」以外を表示)
+  if (a['4.1'] && a['4.1'] !== '特に思い当たらない') {
+    // 頭部外傷・圧外傷・音響外傷は緊急評価対象
+    const isUrgent = a['4.1'] === '頭を打った・けがをした'
+                  || a['4.1'].startsWith('気圧の変化')
+                  || a['4.1'].startsWith('大きな音を聞いた');
+    lines.push({ key: 'きっかけ', val: a['4.1'], alert: isUrgent });
+  }
+
+  return lines;
+}
+
+// ============================================================
+// 陽性所見抽出(耳鳴)
+// ============================================================
+function buildTinnitusSummary(answers) {
+  const lines = [];
+  const a = answers || {};
+  const seijo = a['1.3'];  // 持続性 / 断続性
+
+  // 側(1.1)
+  if (a['1.1']) lines.push({ key: '側', val: a['1.1'] });
+
+  // 経過(発症 / 性状 / 音の高さ / 持続時間)
+  const keika = [];
+  if (a['1.2']) keika.push(a['1.2']);  // 発症時期
+  if (seijo) keika.push(seijo);
+  if (seijo === '持続性') {
+    if (a['2.1']) keika.push(a['2.1']);
+    if (a['2.2']) keika.push(a['2.2']);
+  } else if (seijo === '断続性') {
+    if (a['3.1']) keika.push(a['3.1']);
+    if (a['3.2']) keika.push(a['3.2']);
+  }
+  if (keika.length) lines.push({ key: '経過', val: keika.join(' / ') });
+
+  // 持続性ルート:きっかけ(「思い当たらない」以外)
+  if (seijo === '持続性' && a['2.3'] && a['2.3'] !== '思い当たらない') {
+    lines.push({ key: 'きっかけ', val: a['2.3'] });
+  }
+
+  // 断続性ルート:拍動性判定
+  // 3.4 が記録されている = その場で耳鳴があり、脈と比較できたケース
+  if (seijo === '断続性' && a['3.4']) {
+    const isPulsatile = a['3.4'] === '脈と同じ速さ' || a['3.4'] === '脈より速い(倍くらい)';
+    lines.push({ key: '拍動性', val: a['3.4'], alert: isPulsatile });
+  }
+
+  // 過去エピソード(あり のみ表示、なしは省略)
+  if (a['4.1'] === 'はい') {
+    lines.push({ key: '過去エピソード', val: 'あり' });
+  }
+
+  // 既往(脳梗塞 or 腎機能障害 のみ alert / DM・HBV は通院 status で判断)
+  const eiko = (a['4.2'] || []).filter(x => x !== 'なし');
+  if (eiko.length) {
+    const hasAlert = eiko.includes('脳梗塞') || eiko.includes('腎機能障害');
+    lines.push({ key: '既往', val: eiko.join(' / '), alert: hasAlert });
+  }
+
+  // 通院状況(糖尿病/B型肝炎の follow-up):未通院なら alert
+  if (a['4.3']) {
+    const isUntreated = a['4.3'] === 'いいえ、通院していない';
+    lines.push({ key: 'DM/HBV通院', val: a['4.3'], alert: isUntreated });
+  }
+
+  return lines;
+}
+
+// ============================================================
+// 陽性所見抽出(顔面神経麻痺)
+// ============================================================
+function buildFacialPalsySummary(answers) {
+  const lines = [];
+  const a = answers || {};
+
+  // 部位
+  if (a['1.1']) lines.push({ key: '部位', val: a['1.1'] });
+
+  // 発症(2.1 + 2.2a/b 日数)/ 1ヶ月以内なら alert(ステロイド適応窓)
+  if (a['2.1']) {
+    let val = a['2.1'];
+    const days = a['2.2a'] || a['2.2b'];
+    if (days && (a['2.1'] === '今日から1週間以内' || a['2.1'] === '1〜2週間前から')) {
+      val += ` (${days})`;
+    }
+    const isAcute = a['2.1'] === '今日から1週間以内'
+                 || a['2.1'] === '1〜2週間前から'
+                 || a['2.1'] === '2週間〜1ヶ月前から';
+    lines.push({ key: '発症', val, alert: isAcute });
+  }
+
+  // 新規症状(「なし」は省く)
+  const newSym = (a['3.1'] || []).filter(x => x !== 'なし');
+  if (newSym.length) lines.push({ key: '新規症状', val: newSym.join(' / ') });
+
+  // 麻痺既往(あり/覚えていない のみ表示、後遺症残存なら alert)
+  if (a['4.1'] === 'はい') {
+    const parts = [];
+    if (a['4.2']) parts.push(`既往側 ${a['4.2']}`);
+    if (a['4.3'] === 'はい') parts.push('後遺症残存');
+    else if (a['4.3'] === 'いいえ') parts.push('完全治癒');
+    else if (a['4.3'] === 'わからない') parts.push('後遺症不明');
+    const isSequelae = a['4.3'] === 'はい';
+    lines.push({ key: '麻痺既往', val: 'あり / ' + parts.join(' / '), alert: isSequelae });
+  } else if (a['4.1'] === '覚えていない') {
+    lines.push({ key: '麻痺既往', val: '覚えていない' });
+  }
+
+  // 1ヶ月以内頭部外傷(ありなら alert:外傷性顔面神経麻痺の可能性)
+  if (a['5.1'] === 'はい') {
+    lines.push({ key: '1ヶ月以内頭部外傷', val: 'あり', alert: true });
+  }
+
+  // 基礎疾患(腎機能障害があれば alert)
+  const eiko = (a['6.1'] || []).filter(x => x !== '当てはまるものなし');
+  if (eiko.length) {
+    const hasRenal = eiko.includes('腎機能障害');
+    lines.push({ key: '既往', val: eiko.join(' / '), alert: hasRenal });
+  }
+
+  // 脳/神経系疾患の後遺症(現存所見と新規の鑑別に重要)
+  const koui = (a['6.2'] || []).filter(x => x !== '上記以外、または後遺症はない');
+  if (koui.length) lines.push({ key: '既存後遺症', val: koui.join(' / ') });
+
+  // DM/HBV通院:未通院なら alert
+  if (a['6.3']) {
+    const isUntreated = a['6.3'] === 'いいえ、通院していない';
+    lines.push({ key: 'DM/HBV通院', val: a['6.3'], alert: isUntreated });
+  }
+
+  return lines;
+}
+
+// ============================================================
+// 表示ユーティリティ
+// ============================================================
+function fmtTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  const today = new Date();
+  const isToday = d.getFullYear() === today.getFullYear()
+    && d.getMonth() === today.getMonth()
+    && d.getDate() === today.getDate();
+  if (isToday) return '本日';
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function padNum(n) {
+  return String(n).padStart(3, '0');
+}
+
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2800);
+}
+
+// ============================================================
+// レンダラ
+// ============================================================
+function renderLogin() {
+  state.screen = 'login';
+  app.innerHTML = `
+    <div class="login-screen fade-in">
+      <div class="login-title">耳鼻科問診</div>
+      <div class="login-sub">DOCTOR REVIEW</div>
+      <form class="login-form" onsubmit="event.preventDefault(); doLogin();">
+        <input class="input" type="email" id="email" placeholder="メールアドレス"
+          autocomplete="email" autocapitalize="off" autocorrect="off"
+          ${state.loginBusy ? 'disabled' : ''} />
+        <input class="input" type="password" id="password" placeholder="パスワード"
+          autocomplete="current-password"
+          ${state.loginBusy ? 'disabled' : ''} />
+        <button type="submit" class="btn-primary" ${state.loginBusy ? 'disabled' : ''}>
+          ${state.loginBusy ? 'ログイン中...' : 'ログイン'}
+        </button>
+        ${state.loginError ? `<div class="login-error">${state.loginError}</div>` : ''}
+      </form>
+    </div>
+  `;
+}
+
+function renderSearch() {
+  state.screen = 'search';
+  const list = state.recentList;
+
+  app.innerHTML = `
+    <div class="search-header fade-in">
+      <div class="search-header-title">問診確認</div>
+      <button class="icon-btn" onclick="handleRefresh()">更新</button>
+    </div>
+    <div class="search-body">
+      <div class="search-input-row">
+        <input class="number-input" id="numberInput" type="number"
+          inputmode="numeric" pattern="[0-9]*" placeholder="番号"
+          min="1" max="999"
+          oninput="this.value = this.value.slice(0,3)"
+          onkeydown="if(event.key==='Enter') handleSearch()" />
+        <button class="search-btn" onclick="handleSearch()">検索</button>
+      </div>
+
+      <div class="recent-section">
+        <div class="recent-header">
+          <div class="recent-title">本日の問診 (${list.length}件)</div>
+        </div>
+        ${list.length === 0
+          ? `<div class="recent-empty">本日提出された問診はまだありません</div>`
+          : `<div class="recent-list">
+              ${list.map(item => `
+                <div class="recent-row" onclick="handleRecentTap(${item.patient_no})">
+                  <div class="recent-left">
+                    <span class="recent-num">${padNum(item.patient_no)}</span>
+                    <span class="recent-label">${item.label}</span>
+                  </div>
+                  <span class="recent-time">${fmtTime(item.created_at)}</span>
+                </div>
+              `).join('')}
+            </div>`
+        }
+      </div>
+    </div>
+    <div class="search-footer">
+      <button class="text-link" onclick="confirmLogout()">ログアウト</button>
+    </div>
+  `;
+
+  // 番号入力欄に自動フォーカス
+  setTimeout(() => {
+    const input = document.getElementById('numberInput');
+    if (input) input.focus();
+  }, 100);
+}
+
+function renderDetail() {
+  state.screen = 'detail';
+  const d = state.detail;
+  if (!d) return;
+
+  const records = d.records;
+
+  if (records.length === 0) {
+    app.innerHTML = `
+      <div class="detail-header fade-in">
+        <button class="back-btn" onclick="renderSearch()">← 戻る</button>
+      </div>
+      <div class="detail-body">
+        <div class="detail-empty">
+          <div style="font-size:64px; font-weight:900; font-family:'Zen Kaku Gothic New', sans-serif; color:var(--ink-mute); margin-bottom:12px;">
+            ${padNum(d.requestedNo)}
+          </div>
+          <div style="font-size:16px;">この番号の問診は<br>登録されていません</div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const rec = records[d.selectedIdx || 0];
+  const summary = rec.summarize ? rec.summarize(rec.answers) : [];
+
+  const sectionsHtml = summary.length === 0
+    ? `<div class="detail-empty" style="padding:40px 0;">陽性所見なし</div>`
+    : summary.map(s => `
+        <div class="detail-section ${s.alert ? 'alert' : ''}">
+          <div class="detail-key">${s.key}</div>
+          <div class="detail-val">${s.val}</div>
+        </div>
+      `).join('');
+
+  // 同番号で複数件ある場合の切替UI
+  const otherMatchesHtml = records.length > 1
+    ? `<div class="detail-other-matches">
+        他にも同じ番号の問診があります(計${records.length}件):
+        ${records.map((r, i) =>
+          i === (d.selectedIdx || 0)
+            ? `<strong style="color:var(--accent)">${fmtDate(r.created_at)} ${fmtTime(r.created_at)}</strong>`
+            : `<a onclick="switchDetailRecord(${i})">${fmtDate(r.created_at)} ${fmtTime(r.created_at)}</a>`
+        ).join(' / ')}
+      </div>`
+    : '';
+
+  app.innerHTML = `
+    <div class="detail-header fade-in">
+      <button class="back-btn" onclick="renderSearch()">← 戻る</button>
+    </div>
+    <div class="detail-body">
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <div class="detail-num">${padNum(rec.patient_no)}</div>
+          <div class="detail-meta">
+            <div class="detail-time">${fmtTime(rec.created_at)}</div>
+            <div class="detail-date">${fmtDate(rec.created_at)} ・ ${rec.label}</div>
+          </div>
+        </div>
+        <div class="detail-sections">
+          ${sectionsHtml}
+        </div>
+      </div>
+      ${otherMatchesHtml}
+    </div>
+  `;
+}
+
+// ============================================================
+// イベントハンドラ
+// ============================================================
+async function handleRefresh() {
+  await loadRecent();
+  renderSearch();
+}
+
+async function handleSearch() {
+  const input = document.getElementById('numberInput');
+  if (!input) return;
+  const raw = input.value.trim();
+  if (!raw) return;
+  const no = parseInt(raw, 10);
+  if (isNaN(no) || no < 1 || no > 999) {
+    showToast('1〜999の番号を入力してください');
+    return;
+  }
+  await loadDetailByNumber(no);
+  renderDetail();
+}
+
+async function handleRecentTap(no) {
+  await loadDetailByNumber(no);
+  renderDetail();
+}
+
+function switchDetailRecord(idx) {
+  if (!state.detail) return;
+  state.detail.selectedIdx = idx;
+  renderDetail();
+}
+
+function confirmLogout() {
+  if (confirm('ログアウトしますか?')) {
+    doLogout();
+  }
+}
+
+// ============================================================
+// 起動
+// ============================================================
+init();
+</script>
+</body>
+</html>

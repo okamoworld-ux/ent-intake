@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>顔面神経麻痺問診</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+
+<!-- Supabaseクライアントライブラリ(CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  :root {
+    --bg: #f5f1ea;
+    --bg-card: #ffffff;
+    --ink: #1a1f2e;
+    --ink-soft: #4a5168;
+    --ink-mute: #8590a8;
+    --accent: #1f5f6b;
+    --accent-soft: #e6efef;
+    --accent-deep: #143f48;
+    --line: #d8d2c4;
+    --warn: #b04030;
+    --shadow: 0 2px 8px rgba(20,30,40,0.06);
+    --shadow-lg: 0 8px 24px rgba(20,30,40,0.12);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'BIZ UDPGothic', 'Hiragino Sans', sans-serif; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; user-select: none; }
+  body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+  .header { height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid var(--line); background: var(--bg); }
+  .back-btn { background: none; border: 2px solid var(--line); border-radius: 12px; padding: 10px 18px; font-family: inherit; font-size: 18px; font-weight: 700; color: var(--ink-soft); cursor: pointer; transition: all 0.15s ease; min-width: 90px; }
+  .back-btn:active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .back-btn[disabled] { opacity: 0.25; pointer-events: none; }
+  .restart-btn { background: none; border: 2px solid var(--line); border-radius: 12px; padding: 10px 18px; font-family: inherit; font-size: 16px; font-weight: 700; color: var(--ink-mute); cursor: pointer; }
+  .restart-btn:active { background: #fdf0ed; border-color: var(--warn); color: var(--warn); }
+  .main { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 32px 40px 40px; display: flex; flex-direction: column; }
+  .question-wrap { max-width: 760px; margin: 0 auto; width: 100%; flex: 1; display: flex; flex-direction: column; }
+  .qnum { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.12em; color: var(--accent); margin-bottom: 16px; text-transform: uppercase; }
+  .question { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 30px; font-weight: 700; line-height: 1.5; color: var(--ink); margin-bottom: 8px; }
+  .question .em { color: var(--accent); border-bottom: 3px solid var(--accent); padding-bottom: 2px; }
+  .subtext { font-size: 16px; color: var(--ink-mute); margin-bottom: 28px; font-weight: 400; line-height: 1.6; }
+  .options { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+  .options.grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .options.grid2 .option { justify-content: center; text-align: center; min-height: 64px; padding: 18px; }
+  .option { background: var(--bg-card); border: 2px solid var(--line); border-radius: 16px; padding: 22px 26px; font-family: inherit; font-size: 22px; font-weight: 700; color: var(--ink); text-align: left; cursor: pointer; transition: all 0.15s ease; box-shadow: var(--shadow); line-height: 1.4; display: flex; align-items: center; gap: 16px; min-height: 70px; }
+  .option:active { background: var(--accent-soft); border-color: var(--accent); transform: scale(0.99); }
+  .option.selected { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-deep); }
+  .checkmark { width: 28px; height: 28px; border: 2px solid var(--line); border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; color: white; background: white; }
+  .option.selected .checkmark { background: var(--accent); border-color: var(--accent); }
+  .option.selected .checkmark::after { content: '✓'; font-weight: 900; }
+  .footer { flex-shrink: 0; padding: 16px 40px 24px; background: var(--bg); display: flex; justify-content: center; }
+  .next-btn { background: var(--accent); color: white; border: none; border-radius: 16px; padding: 20px 60px; font-family: inherit; font-size: 22px; font-weight: 700; cursor: pointer; box-shadow: var(--shadow-lg); transition: all 0.15s ease; min-width: 280px; }
+  .next-btn:active { background: var(--accent-deep); transform: scale(0.98); }
+  .next-btn[disabled] { background: var(--ink-mute); opacity: 0.4; pointer-events: none; }
+  .start-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+  .start-title { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 56px; font-weight: 900; color: var(--accent-deep); letter-spacing: 0.05em; margin-bottom: 8px; line-height: 1.2; }
+  .start-tagline { font-size: 18px; color: var(--ink-mute); margin-bottom: 56px; letter-spacing: 0.1em; }
+  .start-emphasis { font-size: 22px; font-weight: 700; line-height: 1.7; color: var(--ink); max-width: 600px; margin-bottom: 24px; background: var(--accent-soft); padding: 24px 32px; border-radius: 12px; border-left: 4px solid var(--accent); text-align: left; }
+  .start-note { font-size: 16px; line-height: 1.7; color: var(--ink-mute); margin-bottom: 48px; }
+  .start-btn { background: var(--accent); color: white; border: none; border-radius: 20px; padding: 26px 80px; font-family: inherit; font-size: 26px; font-weight: 700; cursor: pointer; box-shadow: var(--shadow-lg); letter-spacing: 0.05em; }
+  .start-btn:active { background: var(--accent-deep); transform: scale(0.98); }
+  .end-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+  .end-thanks { font-size: 24px; color: var(--ink-soft); margin-bottom: 32px; }
+  .end-label { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 0.15em; color: var(--ink-mute); margin-bottom: 12px; }
+  .end-number { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 180px; font-weight: 900; line-height: 1; color: var(--accent); letter-spacing: -0.02em; margin-bottom: 32px; }
+  .end-message { font-size: 26px; font-weight: 700; line-height: 1.6; color: var(--ink); max-width: 600px; background: var(--accent-soft); padding: 24px 32px; border-radius: 16px; border-left: 6px solid var(--accent); }
+  .sending-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+  .sending-spinner { width: 80px; height: 80px; border: 6px solid var(--accent-soft); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 32px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .sending-message { font-size: 24px; color: var(--ink-soft); font-weight: 700; }
+  .end-number.local { color: var(--warn); }
+  .end-error-note { margin-top: 16px; font-size: 14px; color: var(--warn); background: #fdf0ed; padding: 12px 20px; border-radius: 8px; border-left: 3px solid var(--warn); max-width: 500px; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20,30,40,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
+  .modal { background: white; border-radius: 20px; padding: 40px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; }
+  .modal-title { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 26px; font-weight: 700; color: var(--ink); margin-bottom: 32px; line-height: 1.4; }
+  .modal-buttons { display: flex; gap: 16px; flex-direction: column; }
+  .modal-no { background: var(--accent); color: white; border: none; border-radius: 14px; padding: 22px; font-family: inherit; font-size: 22px; font-weight: 700; cursor: pointer; order: 1; }
+  .modal-yes { background: white; color: var(--warn); border: 2px solid var(--line); border-radius: 14px; padding: 18px; font-family: inherit; font-size: 18px; font-weight: 700; cursor: pointer; order: 2; margin-top: 32px; }
+  .fade-in { animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="header" id="header" style="display:none">
+  <button class="back-btn" id="backBtn" onclick="goBack()">← 戻る</button>
+  <button class="restart-btn" onclick="confirmRestart()">最初から</button>
+</div>
+
+<div class="main" id="main"></div>
+
+<div class="footer" id="footer" style="display:none">
+  <button class="next-btn" id="nextBtn" onclick="confirmMulti()">次へ進む</button>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://edhukoepusufrmyiyahs.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_4Z_cycy4Y5Y-XKK1OtgB_g_QMjcliIs';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+const FLOW = {
+  '1.1': {
+    section: '部位',
+    question: '顔の症状はどちら側ですか?',
+    type: 'single',
+    layout: 'grid2',
+    options: [
+      { label: '右' },
+      { label: '左' },
+      { label: '両方' }
+    ],
+    next: '2.1'
+  },
+
+  // 発症時期(難聴問診の刻みを踏襲)
+  '2.1': {
+    section: '発症時期',
+    question: '症状はいつから出ていますか?',
+    subtext: '一番近いものを1つ選んでください',
+    type: 'single',
+    options: [
+      { label: '今日から1週間以内', next: '2.2a' },
+      { label: '1〜2週間前から', next: '2.2b' },
+      { label: '2週間〜1ヶ月前から', next: '3.1' },
+      { label: '1〜3ヶ月前から', next: '3.1' },
+      { label: '3ヶ月〜1年前から', next: '3.1' },
+      { label: '1年以上前から', next: '3.1' }
+    ]
+  },
+  '2.2a': {
+    section: '発症日数',
+    question: '何日前からですか?',
+    subtext: '一番近いものを1つ選んでください',
+    type: 'single',
+    layout: 'grid2',
+    options: [
+      { label: '今日' },
+      { label: '1日前' }, { label: '2日前' }, { label: '3日前' },
+      { label: '4日前' }, { label: '5日前' }, { label: '6日前' }, { label: '7日前' }
+    ],
+    next: '3.1'
+  },
+  '2.2b': {
+    section: '発症日数',
+    question: '何日前からですか?',
+    subtext: '一番近いものを1つ選んでください',
+    type: 'single',
+    layout: 'grid2',
+    options: [
+      { label: '8日前' }, { label: '9日前' }, { label: '10日前' },
+      { label: '11日前' }, { label: '12日前' }, { label: '13日前' }, { label: '14日前' }
+    ],
+    next: '3.1'
+  },
+
+  // 新規随伴症状(ベースライン除外を明示)
+  '3.1': {
+    section: '新規症状',
+    question: '顔の症状が出てから、<span class="em">新しく/急に</span>出てきた症状は?',
+    subtext: '「いつもの症状」「もとからある症状」は選ばないでください。今回の顔の症状が出てから新しく感じるようになったものだけを選んでください',
+    type: 'multi',
+    options: [
+      { label: '聞こえにくさ(難聴)' },
+      { label: '耳鳴り' },
+      { label: '味覚の異常(味がわかりにくい、変な味がする)' },
+      { label: 'なし', exclusive: true }
+    ],
+    next: '4.1'
+  },
+
+  // 顔面神経麻痺の既往
+  '4.1': {
+    section: '顔面神経麻痺の既往',
+    question: '過去に、顔面神経麻痺(顔の同じような症状)になったことがありますか?',
+    type: 'single',
+    options: [
+      { label: 'はい', value: 'はい', next: '4.2' },
+      { label: 'いいえ', value: 'いいえ', next: '5.1' },
+      { label: '覚えていない', value: '覚えていない', next: '5.1' }
+    ]
+  },
+  '4.2': {
+    section: '既往側',
+    question: 'そのときは、どちら側でしたか?',
+    type: 'single',
+    layout: 'grid2',
+    options: [
+      { label: '右' },
+      { label: '左' },
+      { label: '両方' },
+      { label: '覚えていない' }
+    ],
+    next: '4.3'
+  },
+  '4.3': {
+    section: '既往の後遺症',
+    question: 'そのときの症状は、その後も残っていますか?',
+    type: 'single',
+    options: [
+      { label: 'はい(後遺症が残っている)', value: 'はい' },
+      { label: 'いいえ(完全に治った)', value: 'いいえ' },
+      { label: 'わからない' }
+    ],
+    next: '5.1'
+  },
+
+  // 1ヶ月以内頭部外傷
+  '5.1': {
+    section: '頭部外傷',
+    question: 'この1ヶ月以内に、頭を強く打ったことがありますか?',
+    type: 'single',
+    layout: 'grid2',
+    options: [
+      { label: 'はい' },
+      { label: 'いいえ' }
+    ],
+    next: '6.1'
+  },
+
+  // 基礎疾患(めまいから流用、顔面神経麻痺で意味のない 前庭性片頭痛 follow-up はスキップ)
+  '6.1': {
+    section: '既往歴',
+    question: '以下の既往はありますか?',
+    subtext: '当てはまるものをすべて選んでください',
+    type: 'multi',
+    options: [
+      { label: '突発性難聴の治療歴' },
+      { label: 'メニエール病の治療歴' },
+      { label: '脳梗塞・脳出血・その他の脳疾患' },
+      { label: '神経系の疾患' },
+      { label: '腎機能障害' },
+      { label: '心房細動' },
+      { label: '糖尿病' },
+      { label: 'B型肝炎' },
+      { label: '当てはまるものなし', exclusive: true }
+    ],
+    nextLogic: 'eikowareki61'
+  },
+  '6.2': {
+    section: '後遺症',
+    question: 'その後遺症で、現在も以下の症状が残っていますか?',
+    subtext: '当てはまるものをすべて選んでください',
+    type: 'multi',
+    options: [
+      { label: '顔の片側が動きにくい・感覚が鈍い' },
+      { label: '聞こえが悪い・耳鳴がある・ふらつく' },
+      { label: '飲み込みにくい・声が出にくい・ろれつが回りにくい' },
+      { label: '手足の動きが悪い・感覚が鈍い' },
+      { label: '上記以外、または後遺症はない', exclusive: true }
+    ],
+    nextLogic: 'afterEiko61'
+  },
+  '6.3': {
+    section: '通院状況',
+    question: '<span class="em">糖尿病またはB型肝炎</span>について、定期的に通院していますか?',
+    type: 'single',
+    options: [
+      { label: 'はい、通院している' },
+      { label: 'いいえ、通院していない' }
+    ],
+    next: 'END'
+  }
+};
+
+let currentNumber = null;
+let currentNumberIsLocal = false;
+let currentQuestionId = null;
+let history = [];
+let answers = {};
+let multiSelectBuffer = [];
+
+function start() {
+  currentNumber = null;
+  currentNumberIsLocal = false;
+  currentQuestionId = null;
+  history = [];
+  answers = {};
+  multiSelectBuffer = [];
+  renderStart();
+}
+
+async function submitToSupabase() {
+  const { data: numberData, error: numberError } = await sb.rpc('issue_patient_number');
+  if (numberError) throw new Error('採番失敗: ' + numberError.message);
+  const patientNumber = numberData;
+  const { error: insertError } = await sb.from('facial_palsy_intake').insert({ patient_no: patientNumber, answers: answers });
+  if (insertError) throw new Error('保存失敗: ' + insertError.message);
+  return patientNumber;
+}
+
+function generateLocalNumber() { return Math.floor(Math.random() * 999) + 1; }
+
+function renderStart() {
+  document.getElementById('header').style.display = 'none';
+  document.getElementById('footer').style.display = 'none';
+  document.getElementById('main').innerHTML = `
+    <div class="start-screen fade-in">
+      <div class="start-title">顔の症状の問診</div>
+      <div class="start-tagline">タップでお答えください</div>
+      <div class="start-emphasis">顔の<strong>動きにくさ</strong>・<strong>しびれ</strong>・<strong>違和感</strong>についてお答えください</div>
+      <div class="start-note">最後まで回答すると<br>診察用の番号が表示されます</div>
+      <button class="start-btn" onclick="goToQuestion('1.1')">問診を始める</button>
+    </div>
+  `;
+}
+
+function renderQuestion(qid) {
+  const q = FLOW[qid];
+  if (!q) return;
+  document.getElementById('header').style.display = 'flex';
+  document.getElementById('backBtn').disabled = history.length === 0;
+  const isMulti = q.type === 'multi';
+  const layoutClass = q.layout === 'grid2' ? 'grid2' : '';
+  let optionsHtml = q.options.map((opt, idx) => {
+    const isSelected = isMulti && multiSelectBuffer.includes(opt.label);
+    const checkmarkHtml = isMulti ? '<div class="checkmark"></div>' : '';
+    return `<button class="option ${isSelected ? 'selected' : ''}" onclick="${isMulti ? `toggleMulti('${qid}', ${idx})` : `selectSingle('${qid}', ${idx})`}">${checkmarkHtml}<span>${opt.label}</span></button>`;
+  }).join('');
+  document.getElementById('main').innerHTML = `
+    <div class="question-wrap fade-in">
+      <div class="qnum">${q.section}</div>
+      <div class="question">${q.question}</div>
+      ${q.subtext ? `<div class="subtext">${q.subtext}</div>` : ''}
+      <div class="options ${layoutClass}">${optionsHtml}</div>
+    </div>
+  `;
+  if (isMulti) { document.getElementById('footer').style.display = 'flex'; updateNextBtn(); }
+  else { document.getElementById('footer').style.display = 'none'; }
+}
+
+function renderSending() {
+  document.getElementById('header').style.display = 'none';
+  document.getElementById('footer').style.display = 'none';
+  document.getElementById('main').innerHTML = `<div class="sending-screen fade-in"><div class="sending-spinner"></div><div class="sending-message">送信しています...</div></div>`;
+}
+
+async function finalize() {
+  renderSending();
+  try {
+    const patientNumber = await submitToSupabase();
+    currentNumber = String(patientNumber).padStart(3, '0');
+    currentNumberIsLocal = false;
+  } catch (err) {
+    console.error('[finalize] Supabase送信失敗:', err);
+    currentNumber = String(generateLocalNumber()).padStart(3, '0');
+    currentNumberIsLocal = true;
+  }
+  renderEnd();
+}
+
+function selectSingle(qid, idx) {
+  const q = FLOW[qid];
+  const opt = q.options[idx];
+  answers[qid] = opt.value || opt.label;
+  let next;
+  if (opt.next) next = opt.next;
+  else if (q.next) next = q.next;
+  history.push(qid);
+  if (next === 'END') finalize(); else goToQuestion(next);
+}
+
+function toggleMulti(qid, idx) {
+  const q = FLOW[qid];
+  const opt = q.options[idx];
+  if (opt.exclusive) {
+    if (multiSelectBuffer.includes(opt.label)) multiSelectBuffer = [];
+    else multiSelectBuffer = [opt.label];
+  } else {
+    multiSelectBuffer = multiSelectBuffer.filter(x => { const o = q.options.find(o => o.label === x); return !o || !o.exclusive; });
+    if (multiSelectBuffer.includes(opt.label)) multiSelectBuffer = multiSelectBuffer.filter(x => x !== opt.label);
+    else multiSelectBuffer.push(opt.label);
+  }
+  renderQuestion(qid);
+}
+
+function updateNextBtn() { document.getElementById('nextBtn').disabled = multiSelectBuffer.length === 0; }
+
+function confirmMulti() {
+  const qid = currentQuestionId;
+  if (multiSelectBuffer.length === 0) return;
+  answers[qid] = [...multiSelectBuffer];
+  history.push(qid);
+  const q = FLOW[qid];
+  let next;
+  if (q.nextLogic === 'eikowareki61') next = computeEikowareki61();
+  else if (q.nextLogic === 'afterEiko61') next = computeAfterEiko61();
+  else next = q.next;
+  if (next === 'END') finalize(); else goToQuestion(next);
+}
+
+function computeAfterEiko61() {
+  // 6.1 で糖尿病/B型肝炎が選ばれていれば 6.3 (通院状況) を聞く
+  const selected = answers['6.1'] || [];
+  if ((selected.includes('糖尿病') || selected.includes('B型肝炎')) && !answers['6.3']) return '6.3';
+  return 'END';
+}
+
+function computeEikowareki61() {
+  // 6.1 で脳/神経系疾患が選ばれていれば 6.2 (後遺症) を聞き、その後 6.3 へチェーン
+  const selected = answers['6.1'] || [];
+  if ((selected.includes('脳梗塞・脳出血・その他の脳疾患') || selected.includes('神経系の疾患')) && !answers['6.2']) return '6.2';
+  return computeAfterEiko61();
+}
+
+function goToQuestion(qid) {
+  currentQuestionId = qid;
+  const q = FLOW[qid];
+  if (q && q.type === 'multi') multiSelectBuffer = answers[qid] ? [...answers[qid]] : [];
+  renderQuestion(qid);
+}
+
+function goBack() {
+  if (history.length === 0) return;
+  const prev = history.pop();
+  delete answers[prev];
+  // 発症時期を変更したら日数(2.2a/b)もクリア
+  if (prev === '2.1') { delete answers['2.2a']; delete answers['2.2b']; }
+  // 麻痺既往(4.1)を「はい」以外に変えたら 4.2, 4.3 が宙に浮くのでクリア
+  if (prev === '4.1') { delete answers['4.2']; delete answers['4.3']; }
+  // 基礎疾患(6.1)を変えると 6.2, 6.3 の分岐が変わる
+  if (prev === '6.1') { delete answers['6.2']; delete answers['6.3']; }
+  goToQuestion(prev);
+}
+
+function confirmRestart() {
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal-overlay" id="modal" onclick="if(event.target.id==='modal')closeModal()">
+      <div class="modal">
+        <div class="modal-title">本当に最初に戻りますか?<br>すべての回答が消えます</div>
+        <div class="modal-buttons">
+          <button class="modal-no" onclick="closeModal()">いいえ、続ける</button>
+          <button class="modal-yes" onclick="closeModal();start()">はい、最初から</button>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+function closeModal() { const m = document.getElementById('modal'); if (m) m.remove(); }
+
+function renderEnd() {
+  document.getElementById('header').style.display = 'none';
+  document.getElementById('footer').style.display = 'none';
+  const errorNote = currentNumberIsLocal ? '<div class="end-error-note">サーバーへの送信に失敗しました。診察室で医師にこの画面を見せてください。</div>' : '';
+  document.getElementById('main').innerHTML = `
+    <div class="end-screen fade-in">
+      <div class="end-thanks">ご回答ありがとうございました</div>
+      <div class="end-label">あなたの番号</div>
+      <div class="end-number ${currentNumberIsLocal ? 'local' : ''}">${currentNumber}</div>
+      <div class="end-message">診察室で番号を<br>お伝えください</div>
+      ${errorNote}
+    </div>
+  `;
+}
+
+start();
+</script>
+</body>
+</html>
